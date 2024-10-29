@@ -17,6 +17,7 @@ endif()
 set(GLFW_SOURCE_DIR "external/glfw")
 set(GLAD_SOURCE_DIR "external/glad")
 set(GLM_SOURCE_DIR "external/glm")
+set(EIGEN_SOURCE_DIR "external/eigen")
 
 # Library: GLFW
 # disable documentation, tests and examples of glfw
@@ -32,6 +33,9 @@ add_subdirectory(${GLAD_SOURCE_DIR})
 
 # Library: GLM
 add_subdirectory(${GLM_SOURCE_DIR})
+
+# Library: Eigen
+add_subdirectory(${EIGEN_SOURCE_DIR})
 
 include_directories(
   ${GLFW_SOURCE_DIR}/includes
@@ -58,4 +62,5 @@ target_link_libraries(
   glad
   glfw
   glm
+  Eigen3::Eigen
 )

@@ -1,95 +1,49 @@
 #include "SimulationController.h"
-#include <glad/glad.h>
-#include <GLFW/glfw3.h>
-
+#include <chrono>
+#include <thread>
 #include <iostream>
 
-void framebufferSizeCallback(GLFWwindow* window, int width, int height);
+SimulationController::SimulationController(int FPS) : model(), renderer() {
+    auto &dynamics = model.getDynamics();
+    renderer.registerDynamics(dynamics);
+    renderer.setMeshData(dynamics);
 
-SimulationController::SimulationController(const int WIDTH, const int HEIGHT) {
-    if (!glfwInit()) {
-        throw std::runtime_error("Failed to initialize GLFW");
-    }
+    auto &statics = model.getStatics();
+    renderer.registerStatics(statics);
+    renderer.setMeshData(statics);
 
-    // Set window hints
-    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
-    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
-    glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
+    renderer.registerToLibigl();
 
-#ifdef __APPLE__
-    glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
-#endif
-
-    // Create the GLFW window
-    window = glfwCreateWindow(WIDTH, HEIGHT, "PBS-soft-body", NULL, NULL);
-    if (!window) {
-        glfwTerminate();
-        throw std::runtime_error("Failed to create GLFW window");
-    }
-
-    // Make window the current context
-    glfwMakeContextCurrent(window);
-    glfwSetFramebufferSizeCallback(window, framebufferSizeCallback);
-
-    // Load OpenGL functions with glad
-    if (!gladLoadGLLoader((GLADloadproc) glfwGetProcAddress)) {
-        throw std::runtime_error("Failed to initialize GLAD");
-    }
-
-    renderer.init();
+    // renderer.initCustomShader();
+    simulationSpeed = std::round(1000 / FPS);
+    simulationThread = new std::thread(&SimulationController::runSimulationThread, this);
+    renderer.getViewer().launch_rendering(true);
+    // renderer.getViewer().launch();
 }
 
 void SimulationController::run() {
-    lastFrameTime = static_cast<float>(glfwGetTime());
-    while (!glfwWindowShouldClose(window)) {
-        float deltaTime = calculateDeltatime();
+}
 
-        processInput();
+void SimulationController::runSimulationThread() {
+    while (true) {
+        auto startTime = std::chrono::high_resolution_clock::now();
 
-        update(deltaTime);
+        // Update simulation
+        model.update(simulationSpeed);
 
-        render();
+        // Render the scene
+        renderer.getLock()->lock();
+        auto &list = model.getDynamics();
+        renderer.setMeshData(list);
+        renderer.getLock()->unlock();
 
-        glfwSwapBuffers(window);
-        glfwPollEvents();
+        auto endTime = std::chrono::high_resolution_clock::now();
+
+        auto deltaTime = endTime - startTime;
+
+        std::chrono::milliseconds sleepTime = std::chrono::milliseconds(simulationSpeed)
+            - std::chrono::duration_cast<std::chrono::milliseconds>(deltaTime);
+
+        std::this_thread::sleep_for(sleepTime);
     }
-
-    // Clear all previously allocated GLFW resources
-    glfwDestroyWindow(window);
-    glfwTerminate();
-}
-
-void SimulationController::processInput() {
-    if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS) {
-        glfwSetWindowShouldClose(window, true);
-    }
-}
-
-void SimulationController::update(float deltaTime) {
-    // update the physical model
-    model.update(deltaTime);
-}
-
-void SimulationController::render() {
-    // Clear buffers for a fresh render
-    glClearColor(0.f, 0.f, 0.f, 1.f);
-    glClear(GL_COLOR_BUFFER_BIT);
-
-    // render the actual scene
-    renderer.render(model); // TODO: here set the connection to the model
-}
-
-float SimulationController::calculateDeltatime() {
-    float currentFrameTime = static_cast<float>(glfwGetTime());
-    float deltaTime = currentFrameTime - lastFrameTime;
-    lastFrameTime = currentFrameTime;
-    return deltaTime;
-}
-
-void SimulationController::keyCallback() {}
-
-void framebufferSizeCallback(GLFWwindow* window, int width, int height) {
-    // make sure the viewport matches the new window dimensions; note that width and 
-    // height will be significantly larger than specified on retina displays.
-    glViewport(0, 0, width, height);
 }

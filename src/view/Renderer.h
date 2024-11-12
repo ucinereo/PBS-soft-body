@@ -1,35 +1,34 @@
-/**
- * @file Renderer.h
- * @brief Defines Renderer class responsible for drawing the simulation model on screen.
- */
 #pragma once
+#include <igl/opengl/glfw/Viewer.h>
+#include <Eigen/Core>
+#include <mutex>
+#include "Shader.h"
+#include "RendereableMesh.h"
+#include "../model/Mesh.h"
 
-#include "../model/SimulationModel.h"
-#include <vector>
-
-/**
- * @class Renderer
- * @brief Renderer class which is responsible for initializing OpenGL and drawing the
- * current simulation state from a model to the screen.
- */
 class Renderer {
 public:
     Renderer();
-    ~Renderer();
 
-    /**
-     * @brief Initialize OpenGL
-     */
-    void init();
+    void registerStatics(std::vector<Mesh> &list);
+    void registerDynamics(std::vector<Mesh> &list);
+    void setMeshData(std::vector<Mesh> &list);
+    void updateRenderGeometry();
+    void registerToLibigl();
 
-    /**
-     * @brief Draw current simulation model to the screen
-     * 
-     * @param model Current state of the simulation model.
-     */
-    void render(const SimulationModel &model);
+    std::mutex *getLock();
+    igl::opengl::glfw::Viewer &getViewer(); // Access the viewer for custom configuration
+    void initCustomShader();
+    void render();
 
 private:
-    // temporary stuff which should be deleted afterwards
-    std::vector<int> arr;
+    std::mutex renderLock;
+    igl::opengl::glfw::Viewer viewer;
+
+    Shader staticShader;
+    Shader dynamicShader;
+
+    std::vector<Renderable> renderables;
+
+    bool bgDrawCallback(igl::opengl::glfw::Viewer &viewer);
 };

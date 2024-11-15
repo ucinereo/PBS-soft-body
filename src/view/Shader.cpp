@@ -1,3 +1,8 @@
+/**
+ * @file Shader.cpp
+ * @brief Shader definitions
+ */
+
 #include "Shader.h"
 #include <fstream>
 #include <sstream>

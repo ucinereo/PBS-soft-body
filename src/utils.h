@@ -1,7 +1,19 @@
+/**
+ * @file utils.h
+ * @brief Collection of utility function which are not directly connected to other
+ * classes and methods.
+ */
+
 #pragma once
 
 #include <Eigen/Core>
 
+/**
+ * @brief Create a floor mesh, consisting of two triangles, which spans the coordinates
+ * (-100, -100) to (100, 100)
+ * @param V Vertex Matrix reference which is overwritten
+ * @param F Fragment Matrix reference which is overwritten
+ */
 void createFloorMesh(Eigen::MatrixXd &V, Eigen::MatrixXi &F) {
     Eigen::MatrixXd floorV(4, 3);
     Eigen::MatrixXi floorF(2, 3);

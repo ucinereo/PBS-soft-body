@@ -14,15 +14,30 @@ out vec2 texcoordi;
 out vec4 Kai;
 out vec4 Kdi;
 out vec4 Ksi;
+uniform mat4 shadow_view;
+uniform mat4 shadow_proj;
+uniform bool shadow_pass;
+uniform bool is_shadow_mapping;
+out vec4 position_shadow;
 
 void main()
 {
   position_eye = vec3 (view * vec4 (position, 1.0));
-  normal_eye = vec3 (normal_matrix * vec4 (normal, 0.0));
-  normal_eye = normalize(normal_eye);
+  if(!shadow_pass)
+  {
+    if(is_shadow_mapping)
+    {
+      position_shadow = shadow_proj * shadow_view * vec4(position, 1.0);
+      // position_shadow = shadow_proj * vec4(position, 1.0);
+      // position_shadow = shadow_proj * shadow_view * model * vec4(position, 1.0);
+
+    }
+    normal_eye = vec3 (normal_matrix * vec4 (normal, 0.0));
+    normal_eye = normalize(normal_eye);
+    Kai = Ka;
+    Kdi = Kd;
+    Ksi = Ks;
+    texcoordi = texcoord;
+  }
   gl_Position = proj * vec4 (position_eye, 1.0); //proj * view * vec4(position, 1.0);
-  Kai = Ka;
-  Kdi = Kd;
-  Ksi = Ks;
-  texcoordi = texcoord;
 }

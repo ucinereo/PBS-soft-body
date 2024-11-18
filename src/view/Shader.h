@@ -5,9 +5,9 @@
 
 #pragma once
 
+#include <igl/opengl/glfw/Viewer.h>
 #include <iostream>
 #include <string.h>
-#include <igl/opengl/glfw/Viewer.h>
 
 /**
  * @class Shader
@@ -15,33 +15,33 @@
  */
 class Shader {
 public:
-    /**
-     * @brief Empty dfault constructor
-     */
-    Shader() {};
+  /**
+   * @brief Empty dfault constructor
+   */
+  Shader() {};
 
-    /**
-     * @brief Construct new shader object with vertex and fragment shader
-     * @param vertexFilePath File path to vertex shader
-     * @param fragmentFilePath File path to fragment shader
-     */
-    Shader(std::string vertexFilePath, std::string fragmentFilePath);
+  /**
+   * @brief Construct new shader object with vertex and fragment shader
+   * @param vertexFilePath File path to vertex shader
+   * @param fragmentFilePath File path to fragment shader
+   */
+  Shader(std::string vertexFilePath, std::string fragmentFilePath);
 
-    /**
-     * @brief Link shader to libigl, which compiles it, handles the error handling and
-     * stores the program id.
-     * @param viewer Libigl viewer reference.
-     */
-    void linkShader(igl::opengl::glfw::Viewer &viewer);
+  /**
+   * @brief Link shader to libigl, which compiles it, handles the error handling
+   * and stores the program id.
+   * @param viewer Libigl viewer reference.
+   */
+  void linkShader(igl::opengl::glfw::Viewer &viewer);
 
-    /**
-     * @brief Getter for linked opengl program id
-     * @return opengl program id
-     */
-    unsigned int getProgID();
+  /**
+   * @brief Getter for linked opengl program id
+   * @return opengl program id
+   */
+  unsigned int getProgID();
 
 private:
-    unsigned int progId; ///< OpenGL program id
-    std::string vertexShaderCode; ///< vertex shader code
-    std::string fragmentShaderCode; ///< fragment shader code
+  unsigned int progId;            ///< OpenGL program id
+  std::string vertexShaderCode;   ///< vertex shader code
+  std::string fragmentShaderCode; ///< fragment shader code
 };

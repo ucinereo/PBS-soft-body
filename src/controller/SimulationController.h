@@ -6,7 +6,7 @@
 
 #include "../model/SimulationModel.h"
 #include "../view/Renderer.h"
-#include <threads.h>
+#include <thread>
 
 /**
  * @class SimulationController

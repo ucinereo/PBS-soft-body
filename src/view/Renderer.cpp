@@ -8,7 +8,7 @@
 #include <iostream>
 #include <string>
 
-Renderer::Renderer() {
+void Renderer::initialize() {
   // Basic configuration for libigl
   viewer.core().is_animating = true;
   viewer.data().show_lines = false; // disables wireframes per default
@@ -108,14 +108,6 @@ void Renderer::render() {
 std::mutex *Renderer::getLock() { return &renderLock; }
 
 igl::opengl::glfw::Viewer &Renderer::getViewer() { return viewer; }
-
-void Renderer::initCustomShader() {
-  // @TODO: check if the first two calls are really necessary
-  viewer.data().set_face_based(false);
-  viewer.launch_init();
-  viewer.data().meshgl.init();
-  igl::opengl::destroy_shader_program(viewer.data().meshgl.shader_mesh);
-}
 
 bool Renderer::bgDrawCallback(igl::opengl::glfw::Viewer &viewer) {
   renderLock.lock();

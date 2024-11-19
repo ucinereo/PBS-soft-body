@@ -8,7 +8,10 @@
 #include <iostream>
 #include <thread>
 
-SimulationController::SimulationController(int FPS) : model(), renderer() {
+SimulationController::SimulationController(int FPS)
+    : model(), renderer(), guiController(renderer.getViewer()) {
+
+  renderer.initialize();
   // Load the dynamic data from the model and register it at the renderer.
   // The setMeshData function connects the render data matrices with the mesh
   // objs.

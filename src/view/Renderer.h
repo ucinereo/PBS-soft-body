@@ -11,6 +11,9 @@
 #include "Shader.h"
 #include <Eigen/Core>
 #include <igl/opengl/glfw/Viewer.h>
+#include <igl/opengl/glfw/imgui/ImGuiHelpers.h>
+#include <igl/opengl/glfw/imgui/ImGuiMenu.h>
+#include <igl/opengl/glfw/imgui/ImGuiPlugin.h>
 #include <mutex>
 
 /**
@@ -23,11 +26,16 @@
 class Renderer {
 public:
   /**
-   * @brief Construct a new Renderer object. Initializes the libigl viewer and
-   * links the custom shaders for dynamic and static meshes. Links the function
-   * which is called before every drawing step of the libigl viewer.
+   * @brief Construct a new Renderer object.
    */
-  Renderer();
+  Renderer(){};
+
+  /**
+   * @brief Initializes the libigl viewer and links the custom shaders for
+   * dynamic and static meshes. Links the function which is called before every
+   * drawing step of the libigl viewer.
+   */
+  void initialize();
 
   /**
    * @brief Adds the static objects to internal object list and sets their new
@@ -71,11 +79,6 @@ public:
   igl::opengl::glfw::Viewer &
   getViewer(); // Access the viewer for custom configuration
 
-  /**
-   * @brief Initializes the custom shaders for static and dynamic objects
-   */
-  void initCustomShader();
-
 private:
   /**
    * @brief Actual render function which overwrites the meshes of the libigl
@@ -95,6 +98,8 @@ private:
 
   std::mutex renderLock; ///< Lock which is necessary to avoid race conditions
   igl::opengl::glfw::Viewer viewer; ///< Libigl viewer
+  igl::opengl::glfw::imgui::ImGuiPlugin plugin;
+  igl::opengl::glfw::imgui::ImGuiMenu menu;
 
   Shader staticShader;  ///< Shader for static objects
   Shader dynamicShader; ///< Shader for dynamic objects

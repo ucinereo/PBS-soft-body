@@ -7,6 +7,7 @@
 
 #include "../model/SimulationModel.h"
 #include "../view/Renderer.h"
+#include "GuiController.h"
 #include <thread>
 
 /**
@@ -37,6 +38,7 @@ private:
       model; ///< Store of the physical model state of the simulation
   Renderer
       renderer; ///< The renderer responsible for drawing the simulation state
+  GuiController guiController;
 
   std::thread *simulationThread; ///< Independent physical update thread
 };

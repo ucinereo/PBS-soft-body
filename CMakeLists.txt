@@ -9,12 +9,15 @@ include(libigl)
 
 # Enable the target igl::glfw
 igl_include(glfw)
+igl_include(imgui)
 
 # Add source files
 add_executable(PBS-soft-body
   src/main.cpp
   src/controller/SimulationController.h
   src/controller/SimulationController.cpp
+  src/controller/GuiController.h
+  src/controller/GuiController.cpp
   src/model/SimulationModel.h
   src/model/SimulationModel.cpp
   src/model/Mesh.h
@@ -36,4 +39,5 @@ add_executable(PBS-soft-body
 target_link_libraries(
   PBS-soft-body
   igl::glfw
+  igl::imgui
 )

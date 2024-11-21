@@ -25,6 +25,57 @@ public:
    */
   SimulationController(int FPS);
 
+  /**
+   * @brief Getter for time step size
+   * @return Current time step setting
+   */
+  float getTimeStep();
+
+  /**
+   * @brief Set time step size
+   * @param timeStep Time step to set
+   */
+  void setTimeStep(float timeStep);
+
+  /**
+   * @brief Getter for stiffness value
+   * @return Current stiffness value
+   */
+  float getStiffness();
+
+  /**
+   * @brief Set stiffness parameter
+   * @param stiffness stiffness value it gets updated to
+   */
+  void setStiffness(float stiffness);
+
+  /**
+   * @brief Getter for pressure value
+   * @return Current pressure value
+   */
+  float getPressure();
+
+  /**
+   * @brief Set pressure value
+   * @param pressure poressure value it gets updated to
+   */
+  void setPressure(float pressure);
+
+  /**
+   * @brief starts the simulation
+   */
+  void runSimulation();
+
+  /**
+   * @brief executes a single step of the simulation
+   */
+  void singleStep();
+
+  /**
+   * @brief resets the simulation
+   */
+  void resetSimulation();
+
 private:
   /**
    * @brief Runs the main simulation loop, which updates the physical model,
@@ -41,4 +92,8 @@ private:
   GuiController guiController;
 
   std::thread *simulationThread; ///< Independent physical update thread
+
+  float timeStep = 0.5f; // time step of the simulation
+  float stiffness = 0.5f; // stiffness value of the simulation
+  float pressure = 1.0f; // pressure value of the simulation
 };

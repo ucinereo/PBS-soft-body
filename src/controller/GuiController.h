@@ -8,6 +8,8 @@
 #include <igl/opengl/glfw/imgui/ImGuiMenu.h>
 #include <igl/opengl/glfw/imgui/ImGuiPlugin.h>
 
+class SimulationController;
+
 /**
  * @class GuiController
  * @brief Manages the user inputs on the GUI menu and maps it to the
@@ -19,7 +21,7 @@ public:
    * @brief Construct a new Gui Controller object
    * @param viewer Libigl viewer from renderer
    */
-  GuiController(igl::opengl::glfw::Viewer &viewer);
+  GuiController(SimulationController *controller, igl::opengl::glfw::Viewer &viewer);
 
 private:
   /**
@@ -31,4 +33,6 @@ private:
 
   igl::opengl::glfw::imgui::ImGuiPlugin plugin; ///< plugin to register the menu
   igl::opengl::glfw::imgui::ImGuiMenu menu; ///< the actual imgui menu component
+
+  SimulationController *controller;
 };

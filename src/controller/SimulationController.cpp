@@ -9,7 +9,7 @@
 #include <thread>
 
 SimulationController::SimulationController(int FPS)
-    : model(), renderer(), guiController(renderer.getViewer()) {
+    : model(), renderer(), guiController(this, renderer.getViewer()) {
 
   renderer.initialize();
   // Load the dynamic data from the model and register it at the renderer.
@@ -34,30 +34,76 @@ SimulationController::SimulationController(int FPS)
   renderer.getViewer().launch_rendering(true);
 }
 
-void SimulationController::runSimulationThread() {
-  while (true) {
-    auto startTime = std::chrono::high_resolution_clock::now();
+float SimulationController::getTimeStep()
+{
+  return this->timeStep;
+}
 
-    // Update the physical simulation model (i.e. do one XPBD step)
-    model.update(simulationSpeed);
+void SimulationController::setTimeStep(float timeStep)
+{
+  this->timeStep = timeStep;
+  // TODO: Update whatever is necessary
+}
 
-    // Render the scene (lock render thread if necessary)
-    renderer.getLock()->lock();
-    // It's only necessary to update the dynamic meshes, as statics don't move
-    auto &list = model.getDynamics();
-    // This overwrites the libigl's meshes with the new ones.
-    renderer.setMeshData(list);
-    renderer.getLock()->unlock();
+float SimulationController::getStiffness()
+{
+    return this->stiffness;
+}
 
-    auto endTime = std::chrono::high_resolution_clock::now();
+void SimulationController::setStiffness(float stiffness)
+{
+  this->stiffness = stiffness;
+}
 
-    auto deltaTime = endTime - startTime;
+float SimulationController::getPressure()
+{
+    return this->pressure;
+}
 
-    // Sleep enough such that we hit the required FPS
-    std::chrono::milliseconds sleepTime =
-        std::chrono::milliseconds(simulationSpeed) -
-        std::chrono::duration_cast<std::chrono::milliseconds>(deltaTime);
+void SimulationController::setPressure(float pressure)
+{
+   this->pressure = pressure;
+}
 
-    std::this_thread::sleep_for(sleepTime);
-  }
+void SimulationController::runSimulation()
+{
+}
+
+void SimulationController::singleStep()
+{
+}
+
+void SimulationController::resetSimulation()
+{
+}
+
+
+void SimulationController::runSimulationThread()
+{
+    while (true)
+    {
+        auto startTime = std::chrono::high_resolution_clock::now();
+
+        // Update the physical simulation model (i.e. do one XPBD step)
+        model.update(simulationSpeed);
+
+        // Render the scene (lock render thread if necessary)
+        renderer.getLock()->lock();
+        // It's only necessary to update the dynamic meshes, as statics don't move
+        auto &list = model.getDynamics();
+        // This overwrites the libigl's meshes with the new ones.
+        renderer.setMeshData(list);
+        renderer.getLock()->unlock();
+
+        auto endTime = std::chrono::high_resolution_clock::now();
+
+        auto deltaTime = endTime - startTime;
+
+        // Sleep enough such that we hit the required FPS
+        std::chrono::milliseconds sleepTime =
+            std::chrono::milliseconds(simulationSpeed) -
+            std::chrono::duration_cast<std::chrono::milliseconds>(deltaTime);
+
+        std::this_thread::sleep_for(sleepTime);
+    }
 }

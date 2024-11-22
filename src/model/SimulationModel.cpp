@@ -11,6 +11,7 @@
 #include <Eigen/Core>
 #include <igl/readOBJ.h>
 #include <igl/readOFF.h>
+#include <igl/upsample.h>
 #include <iostream>
 
 SimulationModel::SimulationModel() { initialize(); }
@@ -24,7 +25,10 @@ void SimulationModel::initialize() {
   Eigen::MatrixX3d V;
   Eigen::MatrixX3i F;
   //  igl::readOFF("../cube.off", V, F);
-  igl::readOBJ("../assets/cube_2x.obj", V, F);
+  igl::readOBJ("../assets/cube_1x.obj", V, F);
+
+  igl::upsample(V, F, 1);
+  std::cout << "V: " << V.rows() << " " << V.cols() << std::endl;
 
   // At the beginning the model is flipped by 90 degrees, thus rotate back.
   Eigen::Matrix3d Rx, Ry, Rz;

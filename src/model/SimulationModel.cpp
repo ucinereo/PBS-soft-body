@@ -81,7 +81,7 @@ void SimulationModel::initialize() {
   }
 
   // Initialize position state matrix
-  m_positions = Eigen::Matrix<double, Eigen::Dynamic, 3>(totalNumVertices, 3);
+  m_positions = Eigen::MatrixX3d::Zero(totalNumVertices, 3);
   for (size_t i = 0; i < dynamicObjs.size(); i++) {
     Eigen::Index start, length;
     std::tie(start, length) = m_indices[i];
@@ -89,8 +89,7 @@ void SimulationModel::initialize() {
   }
 
   // Initialize velocity state matrix with zeros
-  m_velocities = Eigen::Matrix<double, Eigen::Dynamic, 3>(m_positions.rows(),
-                                                          m_positions.cols());
+  m_velocities = Eigen::MatrixX3d::Zero(m_positions.rows(), m_positions.cols());
 
   // Diagonal of the mass matrix, currently 1 for all vertices
   m_mass = Eigen::VectorXd::Ones(m_positions.rows());

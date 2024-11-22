@@ -23,6 +23,10 @@ public:
    */
   Mesh(Eigen::MatrixX3d V, Eigen::MatrixX3i F);
 
+  /**
+   * @brief Get the number of vertices.
+   * @return const Eigen::Index number of vertices
+   */
   const Eigen::Index numVertices() const;
 
   /**

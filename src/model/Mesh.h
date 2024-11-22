@@ -21,26 +21,28 @@ public:
    * is important, as (1, 2, 3) and (3, 2, 1) are the same triangle, but with
    * inverted normals!
    */
-  Mesh(Eigen::MatrixXd V, Eigen::MatrixXi F);
+  Mesh(Eigen::MatrixX3d V, Eigen::MatrixX3i F);
+
+  const Eigen::Index numVertices() const;
 
   /**
    * @brief Get a copy of the vertex matrix.
    * @return const Eigen::MatrixXd non-modifiable vertex matrix
    */
-  const Eigen::MatrixXd getVertices() const;
+  const Eigen::MatrixX3d getVertices() const;
 
   /**
    * @brief Get a copy of the face matrix.
    * @return const Eigen::MatrixXi non-modifiable face matrix
    */
-  const Eigen::MatrixXi getFaces() const;
+  const Eigen::MatrixX3i getFaces() const;
 
   /**
    * @brief Update the vertex positions of the vertices
    * @param V New vertex matrix of shape (N, 3), note that this function does
    * not check wether the new vertex positions are valid.
    */
-  void updateVertices(Eigen::MatrixXd V);
+  void updateVertices(Eigen::MatrixX3d V);
 
   /**
    * @brief Getter for the color of the mesh
@@ -72,8 +74,8 @@ public:
 private:
   // @TODO: Currently stores the vertex positions directly, might be smart to
   // add an origin position just like in the PBS example projects.
-  Eigen::MatrixXd V; ///< Vertex matrix of shape (N x 3)
-  Eigen::MatrixXi F; ///< Face matrix of shape (N x 3)
+  Eigen::MatrixX3d V; ///< Vertex matrix of shape (N x 3)
+  Eigen::MatrixX3i F; ///< Face matrix of shape (N x 3)
   // @TODO: Update single color vector with color matrix (see libigl)
   Eigen::Vector4f color =
       Eigen::Vector4f(0.2f, 0.2f, 0.2f, 1.0f); ///< Mesh color

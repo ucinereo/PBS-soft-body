@@ -15,9 +15,9 @@
  * @param V Vertex Matrix reference which is overwritten
  * @param F Fragment Matrix reference which is overwritten
  */
-void createFloorMesh(Eigen::MatrixXd &V, Eigen::MatrixXi &F) {
-  Eigen::MatrixXd floorV(4, 3);
-  Eigen::MatrixXi floorF(2, 3);
+void createFloorMesh(Eigen::MatrixX3d &V, Eigen::MatrixX3i &F) {
+  Eigen::MatrixX3d floorV(4, 3);
+  Eigen::MatrixX3i floorF(2, 3);
 
   float w = 100.f;
   floorV << -w, 0.0, -w, // Bottom-left corner

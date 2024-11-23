@@ -5,6 +5,7 @@
  */
 #pragma once
 #include "../view/RendereableMesh.h"
+#include "Constraint.h"
 #include "Mesh.h"
 #include <Eigen/Core>
 #include <vector>
@@ -55,4 +56,22 @@ private:
 
   std::vector<Mesh> staticObjs;  ///< Storage of static scene objects
   std::vector<Mesh> dynamicObjs; ///< Storage of dynamic scene objects
+
+  /// Simulation State
+  std::vector<std::pair<Eigen::Index, Eigen::Index>>
+      m_indices; /// Indexing into the full vertex matrix for each object/mesh
+  Eigen::VectorXd m_mass;        /// (N x 1)
+  Eigen::MatrixX3d m_positions;  /// (N x 3)
+  Eigen::MatrixX3d m_velocities; /// (N x 3)
+  std::vector<Constraint *> m_constraints;
+
+  /// External Forces (just gravity for now)
+  Eigen::MatrixX3d m_gravity; /// (N x 3)
+  const double m_gravityAccel =
+      -0.00001; // @TODO: change scene scale such that we can put -9.81 here
+
+  /// Solver Arguments
+  const int m_solverIterations = 1000;  /// Max number of iterations
+  const double m_solverResidual = 1e-9; /// Max residual (sum of delta lambda)
+  double m_time = 0;
 };

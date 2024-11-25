@@ -7,13 +7,15 @@
 
 #include <Eigen/Core>
 
-Mesh::Mesh(Eigen::MatrixXd V, Eigen::MatrixXi F) : V(V), F(F) {}
+Mesh::Mesh(Eigen::MatrixX3d V, Eigen::MatrixX3i F) : V(V), F(F) {}
 
-const Eigen::MatrixXd Mesh::getVertices() const { return V; }
+const Eigen::Index Mesh::numVertices() const { return V.rows(); }
 
-const Eigen::MatrixXi Mesh::getFaces() const { return F; }
+const Eigen::MatrixX3d Mesh::getVertices() const { return V; }
 
-void Mesh::updateVertices(Eigen::MatrixXd v) {
+const Eigen::MatrixX3i Mesh::getFaces() const { return F; }
+
+void Mesh::updateVertices(Eigen::MatrixX3d v) {
   // @TODO: Maybe add some validation here to ensure that the shapes are the
   // same?
   V = v;

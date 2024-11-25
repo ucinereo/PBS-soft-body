@@ -167,16 +167,15 @@ void SimulationModel::update(double deltaTime) {
         c = collConstraints[i - m_constraints.size()];
       }
 
-      auto Minv = m_mass(c->indices()).cwiseInverse().asDiagonal();
+      auto Minv = m_mass(c->indices()).cwiseInverse();
       double C = c->operator()(x);
       Eigen::MatrixX3d dC = c->grad(x);
 
       double alpha = c->m_inverseStiffness / (deltaTime * deltaTime);
-      Eigen::MatrixX3d MinvdC = Minv * dC;
-      double dCTMinvdC = (dC.transpose() * MinvdC).trace();
+      double dCTMinvdC = dC.rowwise().squaredNorm().dot(Minv);
       double dl = (-C - alpha * l(i)) / (dCTMinvdC + alpha);
 
-      x(c->indices(), Eigen::all) += MinvdC * dl;
+      x(c->indices(), Eigen::all) += Minv.asDiagonal() * dC * dl;
       l(i) += dl;
 
       residual += dl;

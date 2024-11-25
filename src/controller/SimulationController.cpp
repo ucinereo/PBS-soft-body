@@ -34,25 +34,25 @@ SimulationController::SimulationController(int FPS)
   renderer.getViewer().launch_rendering(true);
 }
 
-float SimulationController::getTimeStep()
+int SimulationController::getTimeStep()
 {
   return this->timeStep;
 }
 
-void SimulationController::setTimeStep(float timeStep)
+void SimulationController::setTimeStep(int timeStep)
 {
   this->timeStep = timeStep;
-  // TODO: Update whatever is necessary
+  this->simulationSpeed = std::round(1000/timeStep);
 }
 
-float SimulationController::getStiffness()
+double SimulationController::getCompliance()
 {
-    return this->stiffness;
+    return this->compliance;
 }
 
-void SimulationController::setStiffness(float stiffness)
+void SimulationController::setCompliance(double compliance)
 {
-  this->stiffness = stiffness;
+  this->compliance = compliance;
 }
 
 float SimulationController::getPressure()
@@ -65,22 +65,37 @@ void SimulationController::setPressure(float pressure)
    this->pressure = pressure;
 }
 
-void SimulationController::runSimulation()
-{
-}
 
 void SimulationController::singleStep()
 {
+  //not implemented yet
 }
 
 void SimulationController::resetSimulation()
 {
+  //not implemented yet
 }
 
+void SimulationController::stopSimulation()
+{
+  this->isSimulationRunning = false;
+}
+
+void SimulationController::startSimulation()
+{
+  this->isSimulationRunning= true;
+  simulationThread = new std::thread(&SimulationController::runSimulationThread, this);
+}
+
+bool SimulationController::getIsSimulationRunning()
+{
+    return this->isSimulationRunning;
+}
 
 void SimulationController::runSimulationThread()
 {
-    while (true)
+    // while (true)
+    while(isSimulationRunning)
     {
         auto startTime = std::chrono::high_resolution_clock::now();
 

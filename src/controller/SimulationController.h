@@ -29,25 +29,25 @@ public:
    * @brief Getter for time step size
    * @return Current time step setting
    */
-  float getTimeStep();
+  int getTimeStep();
 
   /**
    * @brief Set time step size
    * @param timeStep Time step to set
    */
-  void setTimeStep(float timeStep);
+  void setTimeStep(int timeStep);
 
   /**
-   * @brief Getter for stiffness value
-   * @return Current stiffness value
+   * @brief Getter for compliance value
+   * @return Current compliance value
    */
-  float getStiffness();
+  double getCompliance();
 
   /**
-   * @brief Set stiffness parameter
-   * @param stiffness stiffness value it gets updated to
+   * @brief Set compliance parameter
+   * @param compliance compliance value it gets updated to
    */
-  void setStiffness(float stiffness);
+  void setCompliance(double compliance);
 
   /**
    * @brief Getter for pressure value
@@ -57,14 +57,9 @@ public:
 
   /**
    * @brief Set pressure value
-   * @param pressure poressure value it gets updated to
+   * @param pressure pressure value it gets updated to
    */
   void setPressure(float pressure);
-
-  /**
-   * @brief starts the simulation
-   */
-  void runSimulation();
 
   /**
    * @brief executes a single step of the simulation
@@ -75,6 +70,22 @@ public:
    * @brief resets the simulation
    */
   void resetSimulation();
+
+  /**
+   * @brief stops the simulation
+   */
+  void stopSimulation();
+
+  /**
+   * @brief starts the simulation
+   */
+  void startSimulation();
+
+  /**
+   * @brief Getter of running status of simulation
+   * @return if simulation is running or not (false = not running, true = running)
+   */
+  bool getIsSimulationRunning();
 
 private:
   /**
@@ -93,7 +104,9 @@ private:
 
   std::thread *simulationThread; ///< Independent physical update thread
 
-  float timeStep = 0.5f; // time step of the simulation
-  float stiffness = 0.5f; // stiffness value of the simulation
+  int timeStep = 24; //initial value 0.5f // time step of the simulation
+  double compliance = 0.5f; // stiffness value of the simulation
   float pressure = 1.0f; // pressure value of the simulation
+
+  bool isSimulationRunning = false; // says if the simulation is running or not
 };

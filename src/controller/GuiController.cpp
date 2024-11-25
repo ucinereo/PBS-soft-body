@@ -5,7 +5,8 @@
 #include "GuiController.h"
 #include "SimulationController.h"
 
-GuiController::GuiController(SimulationController *controller, igl::opengl::glfw::Viewer &viewer) {
+GuiController::GuiController(SimulationController *controller,
+                             igl::opengl::glfw::Viewer &viewer) {
 
   this->controller = controller;
 
@@ -36,7 +37,6 @@ GuiController::GuiController(SimulationController *controller, igl::opengl::glfw
   };
 }
 
-
 void GuiController::drawMenu(igl::opengl::glfw::Viewer &viewer,
                              float menu_width) {
   float button_width = menu_width - ImGui::GetStyle().WindowPadding.x * 2;
@@ -47,12 +47,9 @@ void GuiController::drawMenu(igl::opengl::glfw::Viewer &viewer,
   float pressure = this->controller->getPressure();
 
   bool running = this->controller->getIsSimulationRunning();
-  
 
-  if (ImGui::Button("Test Button :-)", ImVec2(button_width, 0))) {
-    std::cout << "lol\n";
-  }
-  if (ImGui::CollapsingHeader("Simulation settings", ImGuiTreeNodeFlags_DefaultOpen)) {
+  if (ImGui::CollapsingHeader("Simulation settings",
+                              ImGuiTreeNodeFlags_DefaultOpen)) {
 
     if (ImGui::Button("Single step", ImVec2(button_width, 0))) {
       std::cout << "not implemented yet \n";
@@ -65,16 +62,15 @@ void GuiController::drawMenu(igl::opengl::glfw::Viewer &viewer,
     }
 
     if (ImGui::Button("Start/Stop Simulation", ImVec2(button_width, 0))) {
-        if (running) {
-          this->controller->stopSimulation();
-        }
-        else {
-          this->controller->startSimulation();
-        }
+      if (running) {
+        this->controller->stopSimulation();
+      } else {
+        this->controller->startSimulation();
+      }
     }
-
   }
-  if (ImGui::CollapsingHeader("Soft body parameters", ImGuiTreeNodeFlags_DefaultOpen)) {
+  if (ImGui::CollapsingHeader("Soft body parameters",
+                              ImGuiTreeNodeFlags_DefaultOpen)) {
     if (ImGui::InputInt("Time step", &timeStep)) {
       std::cout << "current selected time step size is " << timeStep << "\n";
       this->controller->setTimeStep(timeStep);

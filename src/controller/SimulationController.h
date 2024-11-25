@@ -83,7 +83,8 @@ public:
 
   /**
    * @brief Getter of running status of simulation
-   * @return if simulation is running or not (false = not running, true = running)
+   * @return if simulation is running or not (false = not running, true =
+   * running)
    */
   bool getIsSimulationRunning();
 
@@ -104,9 +105,10 @@ private:
 
   std::thread *simulationThread; ///< Independent physical update thread
 
-  int timeStep = 24; //initial value 0.5f // time step of the simulation
-  double compliance = 0.5f; // stiffness value of the simulation
-  float pressure = 1.0f; // pressure value of the simulation
+  int timeStep = 24;        ///< initial value 0.5f time step of the simulation
+  double compliance = 0.5f; ///< inverse stiffness value of the simulation
+  float pressure = 1.0f;    ///< pressure value of the simulation
 
-  bool isSimulationRunning = false; // says if the simulation is running or not
+  bool isSimulationRunning =
+      false; ///< says if the simulation is running or not
 };

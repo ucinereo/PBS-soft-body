@@ -21,7 +21,8 @@ public:
    * @brief Construct a new Gui Controller object
    * @param viewer Libigl viewer from renderer
    */
-  GuiController(SimulationController *controller, igl::opengl::glfw::Viewer &viewer);
+  GuiController(SimulationController *controller,
+                igl::opengl::glfw::Viewer &viewer);
 
 private:
   /**

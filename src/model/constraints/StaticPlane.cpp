@@ -3,16 +3,15 @@
  * @brief Definitions of the Static Plane Constraint
  */
 
-#include "StaticPlane.h"
+#include "../Constraint.h"
 
-double StaticPlaneConstraint::operator()(const Eigen::MatrixX3d &x) const {
-  Eigen::Vector3d u = x.row(m_indices[0]).transpose();
-  return m_normal.dot(u) - m_restDistance;
-}
+void StaticPlaneConstraint::operator()(ConstraintQueryRecord &cRec) const {
+  Eigen::Vector3d u = cRec.x.row(m_indices[0]).transpose();
 
-Eigen::MatrixX3d StaticPlaneConstraint::grad(const Eigen::MatrixX3d &x) const {
-  Eigen::MatrixX3d dC(1, 3);
-  dC << m_normal.transpose();
+  double C = m_normal.dot(u) - m_restDistance;
 
-  return dC;
+  Eigen::MatrixX3d dCdx(1, 3);
+  dCdx << m_normal.transpose();
+
+  cRec.updateValGrad(C, dCdx);
 }

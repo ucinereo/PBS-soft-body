@@ -34,70 +34,50 @@ SimulationController::SimulationController(int FPS)
   renderer.getViewer().launch_rendering(true);
 }
 
-int SimulationController::getTimeStep()
-{
-  return this->timeStep;
-}
+int SimulationController::getTimeStep() { return this->timeStep; }
 
-void SimulationController::setTimeStep(int timeStep)
-{
+void SimulationController::setTimeStep(int timeStep) {
   this->timeStep = timeStep;
-  this->simulationSpeed = std::round(1000/timeStep);
+  this->simulationSpeed = std::round(1000 / timeStep);
 }
 
-double SimulationController::getCompliance()
-{
-    return this->compliance;
-}
+double SimulationController::getCompliance() { return this->compliance; }
 
-void SimulationController::setCompliance(double compliance)
-{
+void SimulationController::setCompliance(double compliance) {
   this->compliance = compliance;
 }
 
-float SimulationController::getPressure()
-{
-    return this->pressure;
+float SimulationController::getPressure() { return this->pressure; }
+
+void SimulationController::setPressure(float pressure) {
+  this->pressure = pressure;
 }
 
-void SimulationController::setPressure(float pressure)
-{
-   this->pressure = pressure;
+void SimulationController::singleStep() {
+  // not implemented yet
 }
 
-
-void SimulationController::singleStep()
-{
-  //not implemented yet
+void SimulationController::resetSimulation() {
+  // not implemented yet
 }
 
-void SimulationController::resetSimulation()
-{
-  //not implemented yet
-}
-
-void SimulationController::stopSimulation()
-{
+void SimulationController::stopSimulation() {
   this->isSimulationRunning = false;
 }
 
-void SimulationController::startSimulation()
-{
-  this->isSimulationRunning= true;
-  simulationThread = new std::thread(&SimulationController::runSimulationThread, this);
+void SimulationController::startSimulation() {
+  this->isSimulationRunning = true;
+  simulationThread =
+      new std::thread(&SimulationController::runSimulationThread, this);
 }
 
-bool SimulationController::getIsSimulationRunning()
-{
-    return this->isSimulationRunning;
+bool SimulationController::getIsSimulationRunning() {
+  return this->isSimulationRunning;
 }
 
-void SimulationController::runSimulationThread()
-{
-    // while (true)
-    while(isSimulationRunning)
-    {
-        auto startTime = std::chrono::high_resolution_clock::now();
+void SimulationController::runSimulationThread() {
+  while (isSimulationRunning) {
+    auto startTime = std::chrono::high_resolution_clock::now();
 
         // Update the physical simulation model (i.e. do one XPBD step)
         model.update(simulationSpeed);

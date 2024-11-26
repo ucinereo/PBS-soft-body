@@ -5,9 +5,6 @@
 
 #include "SimulationModel.h"
 #include "../utils.h"
-#include "./constraints/Distance.h"
-#include "./constraints/StaticPlane.h"
-#include "Constraint.h"
 #include <Eigen/Core>
 #include <igl/readOBJ.h>
 #include <igl/readOFF.h>
@@ -104,12 +101,29 @@ void SimulationModel::initialize() {
                                         .replicate(m_positions.rows(), 1);
 
   // Distance constraints between all pairs of vertices
+  double crossDistanceCompliance = 30000;
   for (Eigen::Index i = 0; i < m_positions.rows(); i++) {
     for (Eigen::Index j = i + 1; j < m_positions.rows(); j++) {
       // @TODO: Remove hard-coded inverse stiffness
-      auto *c = new DistanceConstraint(m_positions, i, j, 10000.0);
+      auto *c =
+          new DistanceConstraint(crossDistanceCompliance, m_positions, i, j);
       m_constraints.push_back(c);
     }
+  }
+
+  //   Distance Constraints for all Triangles
+  double distanceCompliance = 5000;
+  for (Eigen::Index i = 0; i < F.rows(); i++) {
+    auto *c0 = new DistanceConstraint(distanceCompliance, m_positions, F(i, 0),
+                                      F(i, 1));
+    auto *c1 = new DistanceConstraint(distanceCompliance, m_positions, F(i, 0),
+                                      F(i, 2));
+    auto *c2 = new DistanceConstraint(distanceCompliance, m_positions, F(i, 1),
+                                      F(i, 2));
+
+    m_constraints.push_back(c0);
+    m_constraints.push_back(c1);
+    m_constraints.push_back(c2);
   }
 }
 
@@ -135,6 +149,8 @@ void SimulationModel::update(double deltaTime) {
   x += deltaTime * m_velocities;
   x += deltaTime * deltaTime * (m_mass.cwiseInverse()).asDiagonal() * f_ext;
 
+  Eigen::MatrixX3d x0 = x;
+
   // Collect collision constraints (dynamically, will require more logic once we
   // do collisions between different objects)
   std::vector<Constraint *> collConstraints;
@@ -144,7 +160,7 @@ void SimulationModel::update(double deltaTime) {
     // Check if the vertex is penetrating the floor, and if so add a static
     // plane collision constraint
     if (m_positions(i, 1) < 0) {
-      auto *c = new StaticPlaneConstraint(floorNormal, 0.0, i, 0.0);
+      auto *c = new StaticPlaneConstraint(0.0, floorNormal, 0.0, i);
       collConstraints.push_back(c);
     }
   }
@@ -167,18 +183,25 @@ void SimulationModel::update(double deltaTime) {
         c = collConstraints[i - m_constraints.size()];
       }
 
-      auto Minv = m_mass(c->indices()).cwiseInverse();
-      double C = c->operator()(x);
-      Eigen::MatrixX3d dC = c->grad(x);
+      auto Minv = m_mass(c->getIndices()).cwiseInverse();
 
-      double alpha = c->m_inverseStiffness / (deltaTime * deltaTime);
-      double dCTMinvdC = dC.rowwise().squaredNorm().dot(Minv);
-      double dl = (-C - alpha * l(i)) / (dCTMinvdC + alpha);
+      ConstraintQueryRecord cRec(x0, x);
+      (*c)(cRec);
 
-      x(c->indices(), Eigen::all) += Minv.asDiagonal() * dC * dl;
-      l(i) += dl;
+      if (cRec.strategy == EDelta) {
+        x(c->getIndices(), Eigen::all) += cRec.dx;
+        residual += cRec.dx.rowwise().norm().sum();
+      } else if (cRec.strategy == EValGrad) {
+        double alpha = c->getAlpha(deltaTime);
+        double dCdxTMinvdCdx = cRec.dCdx.rowwise().squaredNorm().dot(Minv);
+        double dl = (-cRec.C - alpha * l(i)) / (dCdxTMinvdCdx + alpha);
 
-      residual += dl;
+        Eigen::MatrixX3d dx = Minv.asDiagonal() * cRec.dCdx * dl;
+        x(c->getIndices(), Eigen::all) += dx;
+        l(i) += dl;
+
+        residual += dx.rowwise().norm().sum();
+      }
     }
 
     iter++;

@@ -3,32 +3,26 @@
  * @brief Definitions of the Distance Constraint
  */
 
-#include "Distance.h"
+#include "../Constraint.h"
 
-DistanceConstraint::DistanceConstraint(Eigen::MatrixX3d &x0,
-                                       Eigen::Index indexU, Eigen::Index indexV,
-                                       double inverseStiffness)
-    : Constraint({indexU, indexV}, inverseStiffness) {
+DistanceConstraint::DistanceConstraint(double compliance, Eigen::MatrixX3d &x0,
+                                       Eigen::Index indexU, Eigen::Index indexV)
+    : Constraint(compliance, {indexU, indexV}) {
   Eigen::Vector3d u = x0.row(m_indices[0]).transpose();
   Eigen::Vector3d v = x0.row(m_indices[1]).transpose();
+  
   m_distance = (u - v).norm();
 }
 
-double DistanceConstraint::operator()(const Eigen::MatrixX3d &x) const {
-  Eigen::Vector3d u = x.row(m_indices[0]).transpose();
-  Eigen::Vector3d v = x.row(m_indices[1]).transpose();
-  return (u - v).norm() - m_distance;
-}
+void DistanceConstraint::operator()(ConstraintQueryRecord &cRec) const {
+  Eigen::Vector3d u = cRec.x.row(m_indices[0]).transpose();
+  Eigen::Vector3d v = cRec.x.row(m_indices[1]).transpose();
 
-Eigen::MatrixX3d DistanceConstraint::grad(const Eigen::MatrixX3d &x) const {
-  Eigen::MatrixX3d dC(2, 3);
+  double C = (u - v).norm() - m_distance;
 
-  Eigen::Vector3d u = x.row(m_indices[0]).transpose();
-  Eigen::Vector3d v = x.row(m_indices[1]).transpose();
-
+  Eigen::MatrixX3d dCdx(2, 3);
   Eigen::Vector3d n = (u - v).normalized();
+  dCdx << n.transpose(), -n.transpose();
 
-  dC << n.transpose(), -n.transpose();
-
-  return dC;
+  cRec.updateValGrad(C, dCdx);
 }

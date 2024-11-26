@@ -71,7 +71,7 @@ private:
       -0.00001; // @TODO: change scene scale such that we can put -9.81 here
 
   /// Solver Arguments
-  const int m_solverIterations = 1000;  /// Max number of iterations
+  const int m_solverIterations = 10;    /// Max number of iterations
   const double m_solverResidual = 1e-9; /// Max residual (sum of delta lambda)
   double m_time = 0;
 };

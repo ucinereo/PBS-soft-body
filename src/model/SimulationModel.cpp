@@ -168,7 +168,7 @@ void SimulationModel::update(double deltaTime) {
   }
 
   // Initialize Lagrange multipliers for each constraint
-  Eigen::VectorXd l =
+  Eigen::VectorXd lambda =
       Eigen::VectorXd::Zero(m_constraints.size() + collConstraints.size());
 
   // Solve Constraints
@@ -187,7 +187,7 @@ void SimulationModel::update(double deltaTime) {
 
       auto Minv = m_mass(c->getIndices()).cwiseInverse();
 
-      ConstraintQueryRecord cRec(x0, x);
+      ConstraintQueryRecord cRec(x0, x, lambda(i));
       (*c)(cRec);
 
       if (cRec.strategy == EDelta) {
@@ -196,11 +196,11 @@ void SimulationModel::update(double deltaTime) {
       } else if (cRec.strategy == EValGrad) {
         double alpha = c->getAlpha(deltaTime);
         double dCdxTMinvdCdx = cRec.dCdx.rowwise().squaredNorm().dot(Minv);
-        double dl = (-cRec.C - alpha * l(i)) / (dCdxTMinvdCdx + alpha);
+        double dl = (-cRec.C - alpha * lambda(i)) / (dCdxTMinvdCdx + alpha);
 
         Eigen::MatrixX3d dx = Minv.asDiagonal() * cRec.dCdx * dl;
         x(c->getIndices(), Eigen::all) += dx;
-        l(i) += dl;
+        lambda(i) += dl;
 
         residual += dx.rowwise().norm().sum();
       }

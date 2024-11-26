@@ -8,6 +8,8 @@
 #include <Eigen/Core>
 #include <numeric>
 
+enum EConstraintType { EDistance, EStaticPlane };
+
 /// Update strategies for the solver, defines what values should be used in the
 /// update step
 enum EUpdateStrategy {
@@ -27,6 +29,9 @@ struct ConstraintQueryRecord {
   /// Current position candidates
   Eigen::MatrixX3d &x;
 
+  /// Lagrange Multiplier associated with the constraint
+  double &lambda;
+
   /// Update strategy
   EUpdateStrategy strategy;
 
@@ -41,8 +46,9 @@ struct ConstraintQueryRecord {
 
 public:
   /// Create a new Constraint Query Record
-  ConstraintQueryRecord(Eigen::MatrixX3d &x0, Eigen::MatrixX3d &x)
-      : x0(x0), x(x) {}
+  ConstraintQueryRecord(Eigen::MatrixX3d &x0, Eigen::MatrixX3d &x,
+                        double &lambda)
+      : x0(x0), x(x), lambda(lambda) {}
 
   /// Update query record with the constraint value and the gradients with
   /// respect to the positions
@@ -131,6 +137,11 @@ public:
   double getAlpha(double deltaTime) const {
     return m_compliance / (deltaTime * deltaTime);
   }
+
+  /**
+   * @brief Get the constraint type
+   */
+  virtual EConstraintType getType() const = 0;
 };
 
 /**
@@ -158,6 +169,8 @@ public:
    * @param cRec A Constraint Query Record
    */
   void operator()(ConstraintQueryRecord &cRec) const override;
+
+  EConstraintType getType() const override { return EDistance; }
 
 private:
   double m_distance; /// Initial distance d0, the constraint will try to match
@@ -192,6 +205,11 @@ public:
    * @param cRec A Constraint Query Record
    */
   void operator()(ConstraintQueryRecord &cRec) const override;
+
+  /**
+   * @brief Get the constraint type
+   */
+  EConstraintType getType() const override { return EStaticPlane; }
 
 private:
   Eigen::Vector3d m_normal; /// The normal vector n of the plane

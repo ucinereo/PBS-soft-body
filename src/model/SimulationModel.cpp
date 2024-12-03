@@ -24,7 +24,7 @@ void SimulationModel::initialize() {
   //  igl::readOFF("../cube.off", V, F);
   igl::readOBJ("../assets/cube_1x.obj", V, F);
 
-  igl::upsample(V, F, 1);
+  igl::upsample(V, F, 2);
   std::cout << "V: " << V.rows() << " " << V.cols() << std::endl;
 
   // At the beginning the model is flipped by 90 degrees, thus rotate back.
@@ -104,7 +104,7 @@ void SimulationModel::initialize() {
                                         .replicate(m_positions.rows(), 1);
 
   // Distance constraints between all pairs of vertices
-  double crossDistanceCompliance = 30000;
+  double crossDistanceCompliance = 50000; // 1e-9;
   for (Eigen::Index i = 0; i < m_positions.rows(); i++) {
     for (Eigen::Index j = i + 1; j < m_positions.rows(); j++) {
       // @TODO: Remove hard-coded inverse stiffness
@@ -115,7 +115,7 @@ void SimulationModel::initialize() {
   }
 
   //   Distance Constraints for all Triangles
-  double distanceCompliance = 5000;
+  double distanceCompliance = 10000; // 1e-9;
   for (Eigen::Index i = 0; i < F.rows(); i++) {
     auto *c0 = new DistanceConstraint(distanceCompliance, m_positions, F(i, 0),
                                       F(i, 1));
@@ -141,9 +141,11 @@ void SimulationModel::update(double deltaTime) {
   // @TODO: Remove this, only used for testing
   // Reverse Direction of external force every 3 seconds for 0.5s
   m_time += deltaTime;
-  if (m_time >= 5000 && m_time < 5500) {
-    f_ext *= -1;
-  } else if (m_time >= 5500) {
+  if (m_time >= 10000 && m_time < 10250) {
+    f_ext *= -0.2;
+    //    f_ext += Eigen::MatrixX3d::Random(f_ext.rows(), f_ext.cols()) * 0.005;
+    f_ext(Eigen::all, 0) += Eigen::RowVectorXd::Ones(f_ext.rows()) * 0.000035;
+  } else if (m_time >= 10250) {
     m_time = 0;
   }
 
@@ -157,15 +159,17 @@ void SimulationModel::update(double deltaTime) {
   std::vector<Constraint *> collConstraints;
 
   Eigen::Vector3d floorNormal(0, 1, 0);
-  double staticMu = 0.7;
-  double kineticMu = 0.6;
-  double frictionCompliance = 0.001;
+  double staticMu = 0.9;
+  double kineticMu = 0.9;
+  double collisionCompliance = 1e-9;
+  double frictionCompliance = 1e-9;
   for (Eigen::Index i = 0; i < x.rows(); i++) {
     // Check if the vertex is penetrating the floor, and if so add a static
     // plane collision constraint
     double penetrationDepth = floorNormal.dot(x.row(i).transpose());
     if (penetrationDepth < 0) {
-      auto *c0 = new StaticPlaneCollisionConstraint(0.001, floorNormal, 0.0, i);
+      auto *c0 = new StaticPlaneCollisionConstraint(collisionCompliance,
+                                                    floorNormal, 0.0, i);
       auto *c1 = new PlaneFrictionConstraint(frictionCompliance, floorNormal,
                                              staticMu, kineticMu, i);
 

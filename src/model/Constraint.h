@@ -258,8 +258,10 @@ private:
   double m_penetrationDepth;
 };
 
-/*@class ShellVolumeConstraint *@brief Volume constraint on non - tet -
-    meshes.*/
+/**
+ * @class ShellVolumeConstraint
+ * @brief Constraint to enforce volume preservation for non-tet-meshes
+ */
 class ShellVolumeConstraint : public Constraint {
 public:
   /**
@@ -268,9 +270,12 @@ public:
    * means a perfectly stiff constraint and corresponds to the behavior in the
    * regular PBD algorithm
    * @param x0 Matrix of initial positions
+   * @param start Index of first vertex in simulation domain of the volume
+   * @param length Number of vertices for this volume
    */
   ShellVolumeConstraint(double compliance, Eigen::MatrixX3d &x0,
-                        Eigen::MatrixX3i triangles);
+                        Eigen::MatrixX3i triangles, Eigen::Index start,
+                        Eigen::Index length, double pressure);
 
   /**
    * @brief Evaluate the volume constraint. The value is computed as @TODO
@@ -278,6 +283,11 @@ public:
    */
   void solve(ConstraintQueryRecord &cRec) const override;
 
+  /**
+   * @brief Calcualte the volume of a triangles
+   * @param x Vertex positions
+   * @return double, the volume of the mesh
+   */
   double calculateVolume(const Eigen::MatrixX3d &x) const;
 
   EConstraintType getType() const override { return EShellVolume; }

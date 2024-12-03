@@ -117,10 +117,17 @@ void SimulationModel::initialize() {
     m_constraints.push_back(c2);
   }
 
-  // Volume constraint @TODO: Add support for multiple dynamic objects
-  double volumeCompliance = 1.0;
-  auto *cV = new ShellVolumeConstraint(volumeCompliance, m_positions, F);
-  m_constraints.push_back(cV);
+  // Volume constraint
+  double volumeCompliance = 0.1;
+  double pressure = 1;
+  for (size_t i = 0; i < dynamicObjs.size(); i++) {
+    Eigen::Index start, length;
+    std::tie(start, length) = m_indices[i];
+    std::cout << start << std::endl;
+    auto *cV = new ShellVolumeConstraint(volumeCompliance, m_positions, F,
+                                         start, length, pressure);
+    m_constraints.push_back(cV);
+  }
 }
 
 void SimulationModel::update(double deltaTime) {

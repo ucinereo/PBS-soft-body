@@ -7,17 +7,18 @@
 #include <Eigen/Geometry>
 #include <iostream>
 
-ShellVolumeConstraint::ShellVolumeConstraint(double compliance,
-                                             Eigen::MatrixX3d &x0,
-                                             Eigen::MatrixX3i triangles)
-    : Constraint(compliance, 0, x0.rows()), m_triangles(triangles) {
+ShellVolumeConstraint::ShellVolumeConstraint(
+    double compliance, Eigen::MatrixX3d &x0, Eigen::MatrixX3i triangles,
+    Eigen::Index start, Eigen::Index length, double pressure)
+    : Constraint(compliance, start, length), m_triangles(triangles),
+      m_pressure(pressure) {
   m_init_volume = calculateVolume(x0);
 }
 
 void ShellVolumeConstraint::solve(ConstraintQueryRecord &cRec) const {
   double currentVolume = calculateVolume(cRec.X);
 
-  double C = currentVolume - 5 * m_init_volume;
+  double C = currentVolume - m_pressure * m_init_volume;
 
   Eigen::Index n = cRec.Xp.rows();
   Eigen::MatrixX3d dCdx(n, 3);

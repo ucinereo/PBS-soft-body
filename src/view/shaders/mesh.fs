@@ -2,8 +2,6 @@
 
 uniform mat4 view;             // View matrix
 uniform mat4 proj;             // Projection matrix
-uniform mat4 inverse_rotation;
-uniform mat4 shadow_view_old;
 uniform vec4 fixed_color;      // Fixed color for overriding
 uniform vec3 light_position_eye; // Light position in eye space
 uniform sampler2D tex;         // Texture sampler

@@ -107,24 +107,6 @@ void Renderer::registerToLibigl() {
 }
 
 void Renderer::render() {
-  // Eigen::Matrix4f shadow_view_old = viewer.core().shadow_view;
-  // Eigen::Quaternionf inverse_trackball_angle =
-  //     viewer.core().trackball_angle.conjugate();
-  // Eigen::Matrix4f inverse_rotation = Eigen::Matrix4f::Identity();
-  // inverse_rotation.block<3, 3>(0, 0) =
-  //     inverse_trackball_angle.toRotationMatrix();
-
-  // // Make the shadow static
-  // for (auto &data : viewer.data_list) {
-  //   data.meshgl.bind_mesh();
-  //   GLint viewi =
-  //       glGetUniformLocation(data.meshgl.shader_mesh, "inverse_rotation");
-  //   GLint proji =
-  //       glGetUniformLocation(data.meshgl.shader_mesh, "shadow_view_old");
-  //   glUniformMatrix4fv(viewi, 1, GL_FALSE, inverse_rotation.data());
-  //   glUniformMatrix4fv(proji, 1, GL_FALSE, shadow_view_old.data());
-  // }
-
   // Iterate over all renderables and update the libigl matrices.
   for (size_t i = 0; i < renderables.size(); i++) {
     Renderable &renderable = renderables[i];

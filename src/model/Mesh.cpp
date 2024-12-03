@@ -15,6 +15,8 @@ const Eigen::MatrixX3d Mesh::getVertices() const { return V; }
 
 const Eigen::MatrixX3i Mesh::getFaces() const { return F; }
 
+const Eigen::Index Mesh::numFaces() const { return F.rows(); }
+
 void Mesh::updateVertices(Eigen::MatrixX3d v) {
   // @TODO: Maybe add some validation here to ensure that the shapes are the
   // same?

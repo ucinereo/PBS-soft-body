@@ -4,6 +4,7 @@
  */
 
 #include "SimulationController.h"
+#include "../model/Constraint.h"
 #include <chrono>
 #include <iostream>
 #include <thread>
@@ -41,10 +42,31 @@ void SimulationController::setTimeStep(int timeStep) {
   this->simulationSpeed = std::round(1000 / timeStep);
 }
 
-double SimulationController::getCompliance() { return this->compliance; }
+double SimulationController::getComplianceStaticPlane() {
+  return this->complianceStaticPlane;
+}
 
-void SimulationController::setCompliance(double compliance) {
-  this->compliance = compliance;
+void SimulationController::setComplianceStaticPlane(
+    double complianceStaticPlane) {
+  this->complianceStaticPlane = complianceStaticPlane;
+}
+
+double SimulationController::getComplianceDistance() {
+  return this->complianceDistance;
+  // return getCompliance();
+}
+
+void SimulationController::setComplianceDistance(double complianceDistance) {
+  this->complianceDistance = complianceDistance;
+}
+
+double SimulationController::getCompliancePlaneFriction() {
+  return this->compliancePlaneFriction;
+}
+
+void SimulationController::setCompliancePlaneFriction(
+    double compliancePlaneFriction) {
+  this->compliancePlaneFriction = compliancePlaneFriction;
 }
 
 float SimulationController::getPressure() { return this->pressure; }
@@ -53,12 +75,57 @@ void SimulationController::setPressure(float pressure) {
   this->pressure = pressure;
 }
 
+float SimulationController::getFriction() { return this->friction = friction; }
+
+void SimulationController::setFriction(float friction) {
+  this->friction = friction;
+}
+
 void SimulationController::singleStep() {
-  // not implemented yet
+  this->isSimulationRunning = true;
+  // model.reset();
+  model.getLock()->lock();
+  model.update(timeStep);
+  // Render the scene (lock render thread if necessary)
+  renderer.getLock()->lock();
+  // It's only necessary to update the dynamic meshes, as statics don't move
+  auto &list = model.getDynamics();
+  // This overwrites the libigl's meshes with the new ones.
+  renderer.setMeshData(list);
+  renderer.getLock()->unlock();
+  model.getLock()->unlock();
+  this->isSimulationRunning = false;
 }
 
 void SimulationController::resetSimulation() {
-  // not implemented yet
+
+  auto startTime = std::chrono::high_resolution_clock::now();
+
+  this->isSimulationRunning = false;
+
+  model.getLock()->lock();
+  model.reset();
+
+  // Render the scene (lock render thread if necessary)
+  renderer.getLock()->lock();
+  // It's only necessary to update the dynamic meshes, as statics don't move
+  auto &list = model.getDynamics();
+  // This overwrites the libigl's meshes with the new ones.
+  renderer.setMeshData(list);
+  renderer.getLock()->unlock();
+
+  model.getLock()->unlock();
+
+  auto endTime = std::chrono::high_resolution_clock::now();
+
+  auto deltaTime = endTime - startTime;
+
+  // Sleep enough such that we hit the required FPS
+  std::chrono::milliseconds sleepTime =
+      std::chrono::milliseconds(simulationSpeed) -
+      std::chrono::duration_cast<std::chrono::milliseconds>(deltaTime);
+
+  std::this_thread::sleep_for(sleepTime);
 }
 
 void SimulationController::stopSimulation() {
@@ -71,6 +138,11 @@ void SimulationController::startSimulation() {
       new std::thread(&SimulationController::runSimulationThread, this);
 }
 
+void SimulationController::exportObj() {
+  this->isSimulationRunning = false;
+  model.exportMesh();
+}
+
 bool SimulationController::getIsSimulationRunning() {
   return this->isSimulationRunning;
 }
@@ -80,7 +152,9 @@ void SimulationController::runSimulationThread() {
     auto startTime = std::chrono::high_resolution_clock::now();
 
     // Update the physical simulation model (i.e. do one XPBD step)
-    model.update(simulationSpeed);
+    // model.update(simulationSpeed);
+    model.getLock()->lock();
+    model.update(timeStep);
 
     // Render the scene (lock render thread if necessary)
     renderer.getLock()->lock();
@@ -89,6 +163,8 @@ void SimulationController::runSimulationThread() {
     // This overwrites the libigl's meshes with the new ones.
     renderer.setMeshData(list);
     renderer.getLock()->unlock();
+
+    model.getLock()->unlock();
 
     auto endTime = std::chrono::high_resolution_clock::now();
 

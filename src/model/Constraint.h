@@ -7,7 +7,7 @@
 
 #include <Eigen/Core>
 #include <numeric>
-
+enum EConstraintType {EDistance, EStaticPlaneCollision, EPlaneFriction};
 /// Update strategies for the solver, defines what values should be used in the
 /// update step
 enum EUpdateStrategy {
@@ -131,6 +131,8 @@ public:
   double getAlpha(double deltaTime) const {
     return m_compliance / (deltaTime * deltaTime);
   }
+
+  virtual EConstraintType getType() const = 0;
 };
 
 /**
@@ -158,6 +160,8 @@ public:
    * @param cRec A Constraint Query Record
    */
   void operator()(ConstraintQueryRecord &cRec) const override;
+
+  EConstraintType getType() const override {return EDistance;}
 
 private:
   double m_distance; /// Initial distance d0, the constraint will try to match
@@ -193,7 +197,10 @@ public:
    */
   void operator()(ConstraintQueryRecord &cRec) const override;
 
+  EConstraintType getType() const override { return EStaticPlaneCollision; }
+
 private:
   Eigen::Vector3d m_normal; /// The normal vector n of the plane
   double m_restDistance;    /// The rest distance d_rest
 };
+

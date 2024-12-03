@@ -42,6 +42,12 @@ public:
   const Eigen::MatrixX3i getFaces() const;
 
   /**
+   * @brief Get the number of faces.
+   * @return const Eigen::Index number of faces
+   */
+  const Eigen::Index numFaces() const;
+
+  /**
    * @brief Update the vertex positions of the vertices
    * @param V New vertex matrix of shape (N, 3), note that this function does
    * not check wether the new vertex positions are valid.

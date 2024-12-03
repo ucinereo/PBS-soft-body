@@ -9,6 +9,7 @@
 #include <igl/readOBJ.h>
 #include <igl/readOFF.h>
 #include <igl/upsample.h>
+#include <igl/writeOBJ.h>
 #include <iostream>
 
 SimulationModel::SimulationModel() { initialize(); }
@@ -39,6 +40,8 @@ void SimulationModel::initialize() {
   for (int i = 0; i < V.rows(); i++) {
     V(i, 1) += 5;
   }
+
+  m_initialpositions = Eigen::MatrixX3d(V);
 
   //  // Load the mesh information of the bunny
   //  // - V is a matrix of shape (N x 3) to store vertex positions
@@ -125,6 +128,156 @@ void SimulationModel::initialize() {
     m_constraints.push_back(c1);
     m_constraints.push_back(c2);
   }
+}
+
+double SimulationModel::getComplianceEDistance() {
+  // m_constraints.getCompliance();
+  for (Constraint *c : m_constraints) {
+    c->getCompliance();
+  }
+  return 0.0;
+}
+
+void SimulationModel::setComplianceEDistance(double compliance) {
+  for (Constraint *c : m_constraints) {
+    if (c->getType() == EDistance) {
+      c->setCompliance(compliance);
+    }
+  }
+}
+
+double SimulationModel::getComplianceEStaticPlaneCollision() {
+  for (Constraint *c : m_constraints) {
+    if (c->getType() == EStaticPlaneCollision) {
+      c->getCompliance();
+    }
+  }
+  return 0.0;
+}
+
+void SimulationModel::setComplianceEstaticPlaneCollision(double compliance) {
+  for (Constraint *c : m_constraints) {
+    if (c->getType() == EStaticPlaneCollision) {
+      c->setCompliance(compliance);
+    }
+  }
+}
+
+double SimulationModel::getComplianceEPlaneFriction() {
+  for (Constraint *c : m_constraints) {
+    if (c->getType() == EPlaneFriction) {
+      c->getCompliance();
+    }
+  }
+  return 0.0;
+}
+
+void SimulationModel::setComplianceEPlaneFriction(double compliance) {
+  for (Constraint *c : m_constraints) {
+    if (c->getType() == EPlaneFriction) {
+      c->setCompliance(compliance);
+    }
+  }
+}
+
+void SimulationModel::reset() {
+
+  V = m_initialpositions;
+
+  m_indices.clear();
+  m_time = 0;
+
+  // Reset positions to the initial state
+  m_positions = m_initialpositions;
+
+  for (size_t i = 0; i < dynamicObjs.size(); i++) {
+    Eigen::Index start, length;
+    std::tie(start, length) = m_indices[i];
+    dynamicObjs[i].updateVertices(m_positions.block(start, 0, length, 3));
+  }
+
+  Eigen::Index totalNumVertices = 0;
+  for (Mesh &mesh : dynamicObjs) {
+    Eigen::Index start = totalNumVertices;
+    Eigen::Index length = mesh.numVertices();
+    m_indices.push_back(std::pair<Eigen::Index, Eigen::Index>(start, length));
+    totalNumVertices += length;
+  }
+
+  // Reset velocities to zero
+  m_velocities = Eigen::MatrixX3d::Zero(m_positions.rows(), m_positions.cols());
+
+  // Reset forces such as gravity
+  m_gravity = m_mass.asDiagonal() * Eigen::Vector3d(0, m_gravityAccel, 0)
+                                        .transpose()
+                                        .replicate(m_positions.rows(), 1);
+
+  // Reinitialize constraints
+  m_constraints.clear(); // Clear the existing constraints
+
+  // Re-add distance constraints between all vertex pairs
+  double crossDistanceCompliance = 30000;
+  for (Eigen::Index i = 0; i < m_positions.rows(); i++) {
+    for (Eigen::Index j = i + 1; j < m_positions.rows(); j++) {
+      auto *c =
+          new DistanceConstraint(crossDistanceCompliance, m_positions, i, j);
+      m_constraints.push_back(c);
+    }
+  }
+
+  // Re-add distance constraints for all triangles
+  double distanceCompliance = 5000;
+  for (Eigen::Index i = 0; i < F.rows(); i++) {
+    auto *c0 = new DistanceConstraint(distanceCompliance, m_positions, F(i, 0),
+                                      F(i, 1));
+    auto *c1 = new DistanceConstraint(distanceCompliance, m_positions, F(i, 0),
+                                      F(i, 2));
+    auto *c2 = new DistanceConstraint(distanceCompliance, m_positions, F(i, 1),
+                                      F(i, 2));
+
+    m_constraints.push_back(c0);
+    m_constraints.push_back(c1);
+    m_constraints.push_back(c2);
+  }
+
+  std::cout << "Simulation has been reset to its initial state." << std::endl;
+}
+
+void SimulationModel::exportMesh() {
+  // get the current dynamic objects
+  auto &list = this->getDynamics();
+  Mesh mesh = list[0];
+  // get Vertices and faces of mesh
+  Eigen::MatrixX3d V_export = mesh.getVertices();
+  Eigen::MatrixX3i F_export = mesh.getFaces();
+
+  // @todo: implement an export Mesh that handles more than one object using a
+  // loop
+  // @todo: check that implementation is correct
+  // @todo: check if static objects also have to be exported
+  // int index_V = 0;
+  // int index_F = 0;
+  // for (Mesh m : list) {
+  //   // get current Vertices and Faces
+  //   Eigen::MatrixX3d m_V = m.getVertices();
+  //   Eigen::MatrixX3i m_F = m.getFaces();
+
+  //   // add Vertices and Faces to the Matrix
+  //   const Eigen::Index num_rows_V = m.numVertices();
+  //   V_export.middleRows(num_rows_V, index_V) = m_V;
+
+  //   const Eigen::Index num_rows_F = m.numFaces();
+  //   F_export.middleRows(num_rows_F, index_F) = m_F;
+
+  //   // update index
+  //   index_V += num_rows_V;
+  //   index_F += num_rows_F;
+  // }
+
+  // export to output file
+  igl::writeOBJ("output.obj", V_export, F_export);
+
+  std::cout << "export object as obj file \n";
 }
 
 void SimulationModel::update(double deltaTime) {
@@ -221,3 +374,5 @@ void SimulationModel::update(double deltaTime) {
 std::vector<Mesh> &SimulationModel::getStatics() { return staticObjs; }
 
 std::vector<Mesh> &SimulationModel::getDynamics() { return dynamicObjs; }
+
+std::mutex *SimulationModel::getLock() { return &modelLock; }

@@ -28,6 +28,11 @@ GuiController::GuiController(SimulationController *controller,
 
     bool _viewer_menu_visible = true;
 
+    ImGuiIO &io = ImGui::GetIO();
+    (void)io;
+    io.ConfigFlags |=
+        ImGuiConfigFlags_NavEnableKeyboard; // Enable Keyboard Controls
+
     ImGui::Begin("Viewer", &_viewer_menu_visible,
                  ImGuiWindowFlags_NoSavedSettings);
 
@@ -43,8 +48,12 @@ void GuiController::drawMenu(igl::opengl::glfw::Viewer &viewer,
 
   // get Simulation parameter values
   int timeStep = this->controller->getTimeStep();
-  float compliance = this->controller->getCompliance();
+  float complianceDistance = this->controller->getComplianceDistance();
+  float complianceStaticPlane = this->controller->getComplianceStaticPlane();
+  float compliancePlaneFriction = this->controller->getCompliancePlaneFriction();
   float pressure = this->controller->getPressure();
+  float friction = this->controller->getFriction();
+
 
   bool running = this->controller->getIsSimulationRunning();
 
@@ -52,13 +61,14 @@ void GuiController::drawMenu(igl::opengl::glfw::Viewer &viewer,
                               ImGuiTreeNodeFlags_DefaultOpen)) {
 
     if (ImGui::Button("Single step", ImVec2(button_width, 0))) {
-      std::cout << "not implemented yet \n";
+      std::cout << "executing single time step \n";
       this->controller->singleStep();
     }
 
     if (ImGui::Button("Reset Simulation", ImVec2(button_width, 0))) {
       std::cout << "not implemented yet \n";
       this->controller->resetSimulation();
+      // this->controller->resetSimulation();
     }
 
     if (ImGui::Button("Start/Stop Simulation", ImVec2(button_width, 0))) {
@@ -68,22 +78,54 @@ void GuiController::drawMenu(igl::opengl::glfw::Viewer &viewer,
         this->controller->startSimulation();
       }
     }
+
+    if (ImGui::Button("Export Object", ImVec2(button_width, 0))) {
+      this->controller->exportObj();
+    }
   }
   if (ImGui::CollapsingHeader("Soft body parameters",
                               ImGuiTreeNodeFlags_DefaultOpen)) {
-    if (ImGui::InputInt("Time step", &timeStep)) {
+
+    if (ImGui::SliderInt("Time step", &timeStep, 20, 100)) {
       std::cout << "current selected time step size is " << timeStep << "\n";
       this->controller->setTimeStep(timeStep);
     }
 
-    if (ImGui::SliderFloat("inverse stiffness", &compliance, 0.0f, 1.0f)) {
-      std::cout << "current selected stiffness value is " << compliance << "\n";
-      this->controller->setCompliance(compliance);
+    if (ImGui::SliderFloat("friction", &friction, 0.0f, 1.0f)) {
+      std::cout << "current selected friction value is " << friction << "\n";
+      this->controller->setFriction(friction);
     }
 
     if (ImGui::SliderFloat("pressure", &pressure, 0.0f, 10.0f)) {
       std::cout << "current selected pressure value is " << pressure << "\n";
       this->controller->setPressure(pressure);
+    }
+
+    if (ImGui::CollapsingHeader("Distance constraint",
+                                ImGuiTreeNodeFlags_DefaultOpen)) {
+      if (ImGui::SliderFloat("cdistance ompliance", &complianceDistance, 0.0f,
+                             1.0f)) {
+        std::cout << "current selected compliance value is "
+                  << complianceDistance << "\n";
+        this->controller->setComplianceDistance(complianceDistance);
+      }
+    }
+
+    if (ImGui::CollapsingHeader("StaticPlaneCollision constraint",
+                                ImGuiTreeNodeFlags_DefaultOpen)) {
+      if (ImGui::SliderFloat("static compliance", &complianceStaticPlane, 0.0f,
+                             1.0f)) {
+        std::cout << "current selected compliance value is "
+                  << complianceStaticPlane << "\n";
+        this->controller->setComplianceStaticPlane(complianceStaticPlane);
+      }
+    }
+
+    if (ImGui::CollapsingHeader("PlaneFriction constraint", ImGuiTreeNodeFlags_DefaultOpen)) {
+      if (ImGui::SliderFloat("Plance friction compliance", &compliancePlaneFriction, 0.0f, 1.0f)) {
+        std::cout << "current selected compliance value is " << compliancePlaneFriction << "\n";
+        this->controller->setCompliancePlaneFriction(compliancePlaneFriction);
+      }
     }
   }
 }

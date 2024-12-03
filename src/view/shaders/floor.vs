@@ -28,12 +28,8 @@ void main()
     if(is_shadow_mapping)
     {
       position_shadow = shadow_proj * shadow_view * vec4(position, 1.0);
-      // position_shadow = shadow_proj * vec4(position, 1.0);
-      // position_shadow = shadow_proj * shadow_view * model * vec4(position, 1.0);
-
     }
-    normal_eye = vec3 (normal_matrix * vec4 (normal, 0.0));
-    normal_eye = normalize(normal_eye);
+    normal_eye = normalize(normal);
     Kai = Ka;
     Kdi = Kd;
     Ksi = Ks;

@@ -23,11 +23,9 @@ void Mesh::updateVertices(Eigen::MatrixX3d v) {
   V = v;
 }
 
-Eigen::Vector4f Mesh::getColor() const { return color; }
+Eigen::RowVector3d Mesh::getColor() const { return color; }
 
-void Mesh::updateColor(float r, float g, float b, float alpha) {
-  color << r, g, b, alpha;
-}
+void Mesh::updateColor(double r, double g, double b) { color << r, g, b; }
 
 void Mesh::setID(size_t id) { ID = id; }
 

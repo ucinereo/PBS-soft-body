@@ -18,8 +18,9 @@ out vec4 Ksi;
 void main()
 {
   position_eye = vec3 (view * vec4 (position, 1.0));
-  normal_eye = vec3 (normal_matrix * vec4 (normal, 0.0));
-  normal_eye = normalize(normal_eye);
+  normal_eye = normalize(normal);
+  // normal_eye = vec3 (normal_matrix * vec4 (normal, 0.0));
+  // normal_eye = normalize(normal_eye);
   gl_Position = proj * vec4 (position_eye, 1.0); //proj * view * vec4(position, 1.0);
   Kai = Ka;
   Kdi = Kd;

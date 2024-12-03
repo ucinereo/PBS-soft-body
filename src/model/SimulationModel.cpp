@@ -58,7 +58,7 @@ void SimulationModel::initialize() {
 
   // Create the actual bunny object
   Mesh bunny(V, F);
-  bunny.updateColor(1.f, 0.77f, 0.82f, 1.0f);
+  bunny.updateColor(0.180392f, 0.8f, 0.4431372f);
   dynamicObjs.push_back(bunny); // Add the object to the dynamics.
 
   // Create a second bunny which is in the x-direction
@@ -73,7 +73,9 @@ void SimulationModel::initialize() {
   Eigen::MatrixX3d floorV;
   Eigen::MatrixX3i floorF;
   createFloorMesh(floorV, floorF);
-  staticObjs.push_back(Mesh(floorV, floorF));
+  Mesh floor = Mesh(floorV, floorF);
+  floor.updateColor(0.4, 0.4, 0.4);
+  staticObjs.push_back(floor);
 
   // Compute indices in the per vertex state matrices for each object
   Eigen::Index totalNumVertices = 0;

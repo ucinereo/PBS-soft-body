@@ -29,11 +29,9 @@ add_executable(PBS-soft-body
   src/view/Shader.h
   src/view/Shader.cpp
   src/utils.h
-        # src/model/Constraint.h
-        src/model/constraints/Distance.cpp
-        # src/model/constraints/Distance.h
-        src/model/constraints/StaticPlane.cpp
-        # src/model/constraints/StaticPlane.h
+  src/model/Constraint.h
+  src/model/constraints/Distance.cpp
+  src/model/constraints/StaticPlane.cpp
 )
 
 # link libraries

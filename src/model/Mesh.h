@@ -58,7 +58,7 @@ public:
    * @brief Getter for the color of the mesh
    * @return Color of mesh
    */
-  Eigen::Vector4f getColor() const;
+  Eigen::RowVector3d getColor() const;
 
   /**
    * @brief Set the color of the mesh
@@ -67,7 +67,7 @@ public:
    * @param b Blue contribution, should be in [0, 1]
    * @param alpha Transparency, should be in [0, 1]
    */
-  void updateColor(float r, float g, float b, float alpha);
+  void updateColor(double r, double g, double b);
 
   /**
    * @brief Get the internal ID of the mesh (renderer ID, not libigl)
@@ -87,8 +87,8 @@ private:
   Eigen::MatrixX3d V; ///< Vertex matrix of shape (N x 3)
   Eigen::MatrixX3i F; ///< Face matrix of shape (N x 3)
   // @TODO: Update single color vector with color matrix (see libigl)
-  Eigen::Vector4f color =
-      Eigen::Vector4f(0.2f, 0.2f, 0.2f, 1.0f); ///< Mesh color
+  Eigen::RowVector3d color =
+      Eigen::RowVector3d(0.2f, 0.2f, 0.2f); ///< Mesh color
 
   size_t ID = -1; ///< ID set by the renderer, -1 means uninitialized
 };

@@ -14,6 +14,13 @@ void Renderer::initialize() {
   viewer.data().show_lines = false; // disables wireframes per default
   viewer.core().background_color << 0.5f, 0.78f, 0.89f,
       1.f; // set background to blue
+  viewer.core().is_directional_light = true;
+  init_light_pos << 10.f, 10.f, 10.f;
+  viewer.core().light_position << init_light_pos;
+  viewer.core().is_shadow_mapping = true;
+
+  viewer.core().shadow_height = 10000;
+  viewer.core().shadow_width = 10000;
 
   viewer.launch_init();
   // Initialize the rendering buffers VAO, VBO, EBO and stuff...
@@ -53,6 +60,10 @@ void Renderer::registerDynamics(std::vector<Mesh> &list) {
     // Set the ID to the last added element
     mesh.setID(renderables.size() - 1);
   }
+
+  if (list.size() > 0) {
+    viewer.core().align_camera_center(list[0].getVertices());
+  }
 }
 
 void Renderer::setMeshData(std::vector<Mesh> &list) {
@@ -82,9 +93,16 @@ void Renderer::registerToLibigl() {
 
     // @TODo: Add colors of the mesh
     size_t meshIndex = viewer.mesh_index(renderable.igl_viewer_id);
-    viewer.data_list[meshIndex].show_lines = true;
+    // Set default options for statics and dynamics
+    if (renderable.type == ShaderType::Static) {
+      viewer.data_list[meshIndex].show_lines = false;
+    } else {
+      viewer.data_list[meshIndex].show_lines = true;
+    }
     viewer.data_list[meshIndex].set_face_based(false);
     viewer.data_list[meshIndex].clear();
+    viewer.data_list[meshIndex].set_mesh(renderable.V, renderable.F);
+    viewer.data_list[meshIndex].set_colors(renderable.c);
   }
 }
 

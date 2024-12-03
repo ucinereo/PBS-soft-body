@@ -27,9 +27,9 @@ enum class ShaderType {
  */
 struct Renderable {
   const ShaderType type;
-  Eigen::MatrixXd V; ///< Vertex matrix of shape (N x 3)
-  Eigen::MatrixXi F; ///< Face matrix of shape (N x 3)
-  Eigen::Vector4f c; ///< Color vector
+  Eigen::MatrixXd V;    ///< Vertex matrix of shape (N x 3)
+  Eigen::MatrixXi F;    ///< Face matrix of shape (N x 3)
+  Eigen::RowVector3d c; ///< Color vector
 
   int igl_viewer_id; ///< Mesh id of libigl, to access the element in libigl
 

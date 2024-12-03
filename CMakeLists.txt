@@ -32,6 +32,7 @@ add_executable(PBS-soft-body
   src/model/constraints/Distance.cpp
   src/model/constraints/StaticPlaneCollision.cpp
   src/model/constraints/PlaneFriction.cpp
+  src/model/constraints/Volume.cpp
 )
 
 # link libraries

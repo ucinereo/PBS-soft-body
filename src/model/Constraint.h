@@ -8,7 +8,12 @@
 #include <Eigen/Core>
 #include <numeric>
 
-enum EConstraintType { EDistance, EStaticPlaneCollision, EPlaneFriction };
+enum EConstraintType {
+  EDistance,
+  EStaticPlaneCollision,
+  EPlaneFriction,
+  EShellVolume
+};
 
 /// Update strategies for the solver, defines what values should be used in the
 /// update step
@@ -54,14 +59,14 @@ public:
 
   /// Update query record with the constraint value and the gradients with
   /// respect to the positions
-  void updateValGrad(double C, Eigen::MatrixX3d dCdx) {
+  void updateValGrad(double &C, Eigen::MatrixX3d &dCdx) {
     strategy = EValGrad;
     this->C = C;
     this->dCdx = dCdx;
   }
 
   /// Update query record with the direct position deltas
-  void updateDelta(Eigen::MatrixX3d dx) {
+  void updateDelta(Eigen::MatrixX3d &dx) {
     strategy = EDelta;
     this->dx = dx;
   }
@@ -251,4 +256,34 @@ private:
   double m_staticMu;
   double m_kineticMu;
   double m_penetrationDepth;
+};
+
+/*@class ShellVolumeConstraint *@brief Volume constraint on non - tet -
+    meshes.*/
+class ShellVolumeConstraint : public Constraint {
+public:
+  /**
+   * @brief Construct a new Shell Volume Constraint
+   * @param compliance The inverse of the stiffness of the constraint. 0
+   * means a perfectly stiff constraint and corresponds to the behavior in the
+   * regular PBD algorithm
+   * @param x0 Matrix of initial positions
+   */
+  ShellVolumeConstraint(double compliance, Eigen::MatrixX3d &x0,
+                        Eigen::MatrixX3i triangles);
+
+  /**
+   * @brief Evaluate the volume constraint. The value is computed as @TODO
+   * @param cRec A Constraint Query Record
+   */
+  void solve(ConstraintQueryRecord &cRec) const override;
+
+  double calculateVolume(const Eigen::MatrixX3d &x) const;
+
+  EConstraintType getType() const override { return EShellVolume; }
+
+private:
+  Eigen::MatrixX3i m_triangles; /// Vertex indices of the triangles
+  double m_init_volume; /// Initial volume, the constraint will try to match
+  double m_pressure;    /// Pressure factor in front of the initial volume
 };

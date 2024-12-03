@@ -24,8 +24,7 @@ void SimulationModel::initialize() {
   //  igl::readOFF("../cube.off", V, F);
   igl::readOBJ("../assets/cube_1x.obj", V, F);
 
-  igl::upsample(V, F, 2);
-  std::cout << "V: " << V.rows() << " " << V.cols() << std::endl;
+  igl::upsample(V, F, 3);
 
   // At the beginning the model is flipped by 90 degrees, thus rotate back.
   Eigen::Matrix3d Rx, Ry, Rz;
@@ -103,17 +102,6 @@ void SimulationModel::initialize() {
                                         .transpose()
                                         .replicate(m_positions.rows(), 1);
 
-  // Distance constraints between all pairs of vertices
-  double crossDistanceCompliance = 50000; // 1e-9;
-  for (Eigen::Index i = 0; i < m_positions.rows(); i++) {
-    for (Eigen::Index j = i + 1; j < m_positions.rows(); j++) {
-      // @TODO: Remove hard-coded inverse stiffness
-      auto *c =
-          new DistanceConstraint(crossDistanceCompliance, m_positions, i, j);
-      m_constraints.push_back(c);
-    }
-  }
-
   //   Distance Constraints for all Triangles
   double distanceCompliance = 10000; // 1e-9;
   for (Eigen::Index i = 0; i < F.rows(); i++) {
@@ -128,6 +116,11 @@ void SimulationModel::initialize() {
     m_constraints.push_back(c1);
     m_constraints.push_back(c2);
   }
+
+  // Volume constraint @TODO: Add support for multiple dynamic objects
+  double volumeCompliance = 1.0;
+  auto *cV = new ShellVolumeConstraint(volumeCompliance, m_positions, F);
+  m_constraints.push_back(cV);
 }
 
 void SimulationModel::update(double deltaTime) {

@@ -96,6 +96,7 @@ void SimulationModel::initialize() {
 
   // Diagonal of the mass matrix, currently 1 for all vertices
   m_mass = Eigen::VectorXd::Ones(m_positions.rows());
+  m_massInv = m_mass.cwiseInverse();
 
   // Gravity external force
   m_gravity = m_mass.asDiagonal() * Eigen::Vector3d(0, m_gravityAccel, 0)
@@ -140,36 +141,44 @@ void SimulationModel::update(double deltaTime) {
   // @TODO: Remove this, only used for testing
   // Reverse Direction of external force every 3 seconds for 0.5s
   m_time += deltaTime;
-  if (m_time >= 3000 && m_time < 3500) {
+  if (m_time >= 5000 && m_time < 5500) {
     f_ext *= -1;
-  } else if (m_time >= 3500) {
+  } else if (m_time >= 5500) {
     m_time = 0;
   }
 
   // Predict positions
   Eigen::MatrixX3d x = m_positions;
   x += deltaTime * m_velocities;
-  x += deltaTime * deltaTime * (m_mass.cwiseInverse()).asDiagonal() * f_ext;
-
-  Eigen::MatrixX3d x0 = x;
+  x += deltaTime * deltaTime * m_massInv.asDiagonal() * f_ext;
 
   // Collect collision constraints (dynamically, will require more logic once we
   // do collisions between different objects)
   std::vector<Constraint *> collConstraints;
 
   Eigen::Vector3d floorNormal(0, 1, 0);
-  for (Eigen::Index i = 0; i < m_positions.rows(); i++) {
+  double staticMu = 0.7;
+  double kineticMu = 0.6;
+  double frictionCompliance = 0.001;
+  for (Eigen::Index i = 0; i < x.rows(); i++) {
     // Check if the vertex is penetrating the floor, and if so add a static
     // plane collision constraint
-    if (m_positions(i, 1) < 0) {
-      auto *c = new StaticPlaneConstraint(0.0, floorNormal, 0.0, i);
-      collConstraints.push_back(c);
+    double penetrationDepth = floorNormal.dot(x.row(i).transpose());
+    if (penetrationDepth < 0) {
+      auto *c0 = new StaticPlaneCollisionConstraint(0.001, floorNormal, 0.0, i);
+      auto *c1 = new PlaneFrictionConstraint(frictionCompliance, floorNormal,
+                                             staticMu, kineticMu, i);
+
+      collConstraints.push_back(c0);
+      collConstraints.push_back(c1);
     }
   }
 
+  std::vector<size_t> indices(m_constraints.size() + collConstraints.size());
+  std::iota(indices.begin(), indices.end(), 0);
+
   // Initialize Lagrange multipliers for each constraint
-  Eigen::VectorXd lambda =
-      Eigen::VectorXd::Zero(m_constraints.size() + collConstraints.size());
+  Eigen::VectorXd lambda = Eigen::VectorXd::Zero((Eigen::Index)indices.size());
 
   // Solve Constraints
   double residual;
@@ -177,7 +186,7 @@ void SimulationModel::update(double deltaTime) {
   do {
     residual = 0;
 
-    for (size_t i = 0; i < m_constraints.size() + collConstraints.size(); i++) {
+    for (size_t i : indices) {
       Constraint *c;
       if (i < m_constraints.size()) {
         c = m_constraints[i];
@@ -185,10 +194,9 @@ void SimulationModel::update(double deltaTime) {
         c = collConstraints[i - m_constraints.size()];
       }
 
-      auto Minv = m_mass(c->getIndices()).cwiseInverse();
-
-      ConstraintQueryRecord cRec(x0, x, lambda(i));
-      (*c)(cRec);
+      Eigen::VectorXd Minv = m_massInv(c->getIndices());
+      ConstraintQueryRecord cRec(m_positions, x);
+      c->solve(cRec);
 
       if (cRec.strategy == EDelta) {
         x(c->getIndices(), Eigen::all) += cRec.dx;
@@ -198,7 +206,7 @@ void SimulationModel::update(double deltaTime) {
         double dCdxTMinvdCdx = cRec.dCdx.rowwise().squaredNorm().dot(Minv);
         double dl = (-cRec.C - alpha * lambda(i)) / (dCdxTMinvdCdx + alpha);
 
-        Eigen::MatrixX3d dx = Minv.asDiagonal() * cRec.dCdx * dl;
+        Eigen::MatrixX3d dx = dl * Minv.asDiagonal() * cRec.dCdx;
         x(c->getIndices(), Eigen::all) += dx;
         lambda(i) += dl;
 

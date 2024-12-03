@@ -1,6 +1,8 @@
 #version 150
 uniform mat4 view;
 uniform mat4 proj;
+uniform mat4 inverse_rotation;
+uniform mat4 shadow_view_old;
 uniform vec4 fixed_color;
 in vec3 position_eye;
 in vec3 normal_eye;

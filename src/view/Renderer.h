@@ -103,6 +103,7 @@ private:
 
   Shader staticShader;  ///< Shader for static objects
   Shader dynamicShader; ///< Shader for dynamic objects
+  Eigen::Vector3f init_light_pos;
 
   std::vector<Renderable>
       renderables; ///< List which stores all renderable meshes

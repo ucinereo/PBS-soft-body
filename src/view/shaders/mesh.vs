@@ -1,6 +1,8 @@
 #version 150
 uniform mat4 view;
 uniform mat4 proj;
+uniform mat4 inverse_rotation;
+uniform mat4 shadow_view_old;
 uniform mat4 normal_matrix;
 in vec3 position;
 in vec3 normal;
@@ -18,6 +20,7 @@ out vec4 Ksi;
 void main()
 {
   position_eye = vec3 (view * vec4 (position, 1.0));
+  // normal_eye = normalize(normal);
   normal_eye = vec3 (normal_matrix * vec4 (normal, 0.0));
   normal_eye = normalize(normal_eye);
   gl_Position = proj * vec4 (position_eye, 1.0); //proj * view * vec4(position, 1.0);

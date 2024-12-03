@@ -14,6 +14,13 @@ void Renderer::initialize() {
   viewer.data().show_lines = false; // disables wireframes per default
   viewer.core().background_color << 0.5f, 0.78f, 0.89f,
       1.f; // set background to blue
+  viewer.core().is_directional_light = true;
+  init_light_pos << 10.f, 10.f, 10.f;
+  viewer.core().light_position << init_light_pos;
+  viewer.core().is_shadow_mapping = true;
+
+  viewer.core().shadow_height = 10000;
+  viewer.core().shadow_width = 10000;
 
   viewer.launch_init();
   // Initialize the rendering buffers VAO, VBO, EBO and stuff...
@@ -53,6 +60,10 @@ void Renderer::registerDynamics(std::vector<Mesh> &list) {
     // Set the ID to the last added element
     mesh.setID(renderables.size() - 1);
   }
+
+  if (list.size() > 0) {
+    viewer.core().align_camera_center(list[0].getVertices());
+  }
 }
 
 void Renderer::setMeshData(std::vector<Mesh> &list) {
@@ -82,13 +93,38 @@ void Renderer::registerToLibigl() {
 
     // @TODo: Add colors of the mesh
     size_t meshIndex = viewer.mesh_index(renderable.igl_viewer_id);
-    viewer.data_list[meshIndex].show_lines = true;
+    // Set default options for statics and dynamics
+    if (renderable.type == ShaderType::Static) {
+      viewer.data_list[meshIndex].show_lines = false;
+    } else {
+      viewer.data_list[meshIndex].show_lines = true;
+    }
     viewer.data_list[meshIndex].set_face_based(false);
     viewer.data_list[meshIndex].clear();
+    viewer.data_list[meshIndex].set_mesh(renderable.V, renderable.F);
+    viewer.data_list[meshIndex].set_colors(renderable.c);
   }
 }
 
 void Renderer::render() {
+  // Eigen::Matrix4f shadow_view_old = viewer.core().shadow_view;
+  // Eigen::Quaternionf inverse_trackball_angle =
+  //     viewer.core().trackball_angle.conjugate();
+  // Eigen::Matrix4f inverse_rotation = Eigen::Matrix4f::Identity();
+  // inverse_rotation.block<3, 3>(0, 0) =
+  //     inverse_trackball_angle.toRotationMatrix();
+
+  // // Make the shadow static
+  // for (auto &data : viewer.data_list) {
+  //   data.meshgl.bind_mesh();
+  //   GLint viewi =
+  //       glGetUniformLocation(data.meshgl.shader_mesh, "inverse_rotation");
+  //   GLint proji =
+  //       glGetUniformLocation(data.meshgl.shader_mesh, "shadow_view_old");
+  //   glUniformMatrix4fv(viewi, 1, GL_FALSE, inverse_rotation.data());
+  //   glUniformMatrix4fv(proji, 1, GL_FALSE, shadow_view_old.data());
+  // }
+
   // Iterate over all renderables and update the libigl matrices.
   for (size_t i = 0; i < renderables.size(); i++) {
     Renderable &renderable = renderables[i];

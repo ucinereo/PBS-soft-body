@@ -1,6 +1,8 @@
 #version 150
 uniform mat4 view;
 uniform mat4 proj;
+uniform mat4 inverse_rotation;
+uniform mat4 shadow_view_old;
 uniform mat4 normal_matrix;
 in vec3 position;
 in vec3 normal;
@@ -27,13 +29,10 @@ void main()
   {
     if(is_shadow_mapping)
     {
+      // mat4 tmp_view = shadow_view_old * inverse_rotation * inverse(shadow_view_old) * shadow_view;
       position_shadow = shadow_proj * shadow_view * vec4(position, 1.0);
-      // position_shadow = shadow_proj * vec4(position, 1.0);
-      // position_shadow = shadow_proj * shadow_view * model * vec4(position, 1.0);
-
     }
-    normal_eye = vec3 (normal_matrix * vec4 (normal, 0.0));
-    normal_eye = normalize(normal_eye);
+    normal_eye = normalize(normal);
     Kai = Ka;
     Kdi = Kd;
     Ksi = Ks;

@@ -8,6 +8,13 @@
 #include <Eigen/Core>
 #include <numeric>
 
+enum EConstraintType {
+  EDistance,
+  EStaticPlaneCollision,
+  EPlaneFriction,
+  EShellVolume
+};
+
 /// Update strategies for the solver, defines what values should be used in the
 /// update step
 enum EUpdateStrategy {
@@ -22,10 +29,16 @@ enum EUpdateStrategy {
  */
 struct ConstraintQueryRecord {
   /// Positions at the beginning of the solver
-  Eigen::MatrixX3d &x0;
+  const Eigen::MatrixX3d &Xp;
 
   /// Current position candidates
-  Eigen::MatrixX3d &x;
+  const Eigen::MatrixX3d &X;
+
+  //  /// Vertex masses
+  //  const Eigen::VectorXd &m;
+  //
+  //  /// Vertex inverse masses
+  //  const Eigen::VectorXd &w;
 
   /// Update strategy
   EUpdateStrategy strategy;
@@ -41,19 +54,19 @@ struct ConstraintQueryRecord {
 
 public:
   /// Create a new Constraint Query Record
-  ConstraintQueryRecord(Eigen::MatrixX3d &x0, Eigen::MatrixX3d &x)
-      : x0(x0), x(x) {}
+  ConstraintQueryRecord(const Eigen::MatrixX3d &Xp, const Eigen::MatrixX3d &X)
+      : Xp(Xp), X(X) {}
 
   /// Update query record with the constraint value and the gradients with
   /// respect to the positions
-  void updateValGrad(double C, Eigen::MatrixX3d dCdx) {
+  void updateValGrad(double &C, Eigen::MatrixX3d &dCdx) {
     strategy = EValGrad;
     this->C = C;
     this->dCdx = dCdx;
   }
 
   /// Update query record with the direct position deltas
-  void updateDelta(Eigen::MatrixX3d dx) {
+  void updateDelta(Eigen::MatrixX3d &dx) {
     strategy = EDelta;
     this->dx = dx;
   }
@@ -105,7 +118,7 @@ public:
    * @return The constraint value C and the gradient dC/dx will be written to
    * the Constraint Query Record
    */
-  virtual void operator()(ConstraintQueryRecord &cRec) const = 0;
+  virtual void solve(ConstraintQueryRecord &cRec) const = 0;
 
   /**
    * @brief Get the indices of the relevant vertices
@@ -131,6 +144,11 @@ public:
   double getAlpha(double deltaTime) const {
     return m_compliance / (deltaTime * deltaTime);
   }
+
+  /**
+   * @brief Get the constraint type
+   */
+  virtual EConstraintType getType() const = 0;
 };
 
 /**
@@ -141,23 +159,23 @@ class DistanceConstraint : public Constraint {
 public:
   /**
    * @brief Create a new Distance Constraint.
-   * @param x0 Matrix of initial positions
-   * @param indexU Index of the first vertex
-   * @param indexV Index of the second vertex
    * @param compliance The inverse of the stiffness of the constraint. 0
    * means a perfectly stiff constraint and corresponds to the behavior in the
    * regular PBD algorithm
+   * @param X0 Matrix of initial positions
+   * @param index1 Index of the first vertex
+   * @param index2 Index of the second vertex
    */
-  DistanceConstraint(double compliance, Eigen::MatrixX3d &x0,
-                     Eigen::Index indexU, Eigen::Index indexV);
+  DistanceConstraint(double compliance, Eigen::MatrixX3d &X0,
+                     Eigen::Index index1, Eigen::Index index2);
 
   /**
-   * @brief Evaluate the distance constraint. The value is computed as C = |u -
-   * v| - d0 and the gradients are dC/du = n and dC/dv = -n. Where n = (u - v) /
-   * |u - v|
+   * @brief Solve the Distance Constraint.
    * @param cRec A Constraint Query Record
    */
-  void operator()(ConstraintQueryRecord &cRec) const override;
+  void solve(ConstraintQueryRecord &cRec) const override;
+
+  EConstraintType getType() const override { return EDistance; }
 
 private:
   double m_distance; /// Initial distance d0, the constraint will try to match
@@ -169,7 +187,7 @@ private:
  * @brief Collision constraint between a vertex and a plane given by its normal
  * vector
  */
-class StaticPlaneConstraint : public Constraint {
+class StaticPlaneCollisionConstraint : public Constraint {
 public:
   /**
    * @brief Create a new Static Plane Constraint.
@@ -179,21 +197,103 @@ public:
    * @param normal The normal vector of the plane
    * @param restDistance The distance from the plane when the object is at rest
    * (i.e. if the constraint is satisfied)
-   * @param indexU Index of the vertex
+   * @param index1 Index of the vertex
    */
-  StaticPlaneConstraint(double compliance, Eigen::Vector3d &normal,
-                        double restDistance, Eigen::Index indexU)
-      : Constraint(compliance, {indexU}), m_normal(normal),
+  StaticPlaneCollisionConstraint(double compliance, Eigen::Vector3d &normal,
+                                 double restDistance, Eigen::Index index1)
+      : Constraint(compliance, {index1}), m_normal(normal),
         m_restDistance(restDistance) {}
 
   /**
-   * @brief Evaluate the static plane constraint. This will return n^T * x -
-   * d_rest and the gradient is dC/du = n.
+   * @brief Solve the Static Plane Collision Constraint.
    * @param cRec A Constraint Query Record
    */
-  void operator()(ConstraintQueryRecord &cRec) const override;
+  void solve(ConstraintQueryRecord &cRec) const override;
+
+  /**
+   * @brief Get the constraint type
+   */
+  EConstraintType getType() const override { return EStaticPlaneCollision; }
 
 private:
   Eigen::Vector3d m_normal; /// The normal vector n of the plane
   double m_restDistance;    /// The rest distance d_rest
+};
+
+/**
+ * @class PlaneFrictionConstraint
+ * @brief Plane friction constraint which models static and kinetic friction
+ * between a vertex and a plane according to the Coulomb friction model.
+ */
+class PlaneFrictionConstraint : public Constraint {
+public:
+  /**
+   * @brief Create a new Plane Friction Constraint.
+   * @param compliance The inverse of the stiffness of the constraint. 0
+   * means a perfectly stiff constraint and corresponds to the behavior in the
+   * regular PBD algorithm (likely want this for collisions)
+   * @param normal The normal vector of the plane
+   * @param staticMu The static friction coefficient
+   * @param kineticMu The kinetic friction coefficient
+   * @param index1 Index of the vertex
+   */
+  PlaneFrictionConstraint(double compliance, Eigen::Vector3d &normal,
+                          double staticMu, double kineticMu,
+                          Eigen::Index index1)
+      : Constraint(compliance, {index1}), m_normal(normal),
+        m_staticMu(staticMu), m_kineticMu(kineticMu) {}
+
+  /**
+   * @brief Solve the Plane Friction Constraint.
+   * @param cRec A Constraint Query Record
+   */
+  void solve(ConstraintQueryRecord &cRec) const override;
+
+  EConstraintType getType() const override { return EPlaneFriction; }
+
+private:
+  Eigen::Vector3d &m_normal;
+  double m_staticMu;
+  double m_kineticMu;
+  double m_penetrationDepth;
+};
+
+/**
+ * @class ShellVolumeConstraint
+ * @brief Constraint to enforce volume preservation for non-tet-meshes
+ */
+class ShellVolumeConstraint : public Constraint {
+public:
+  /**
+   * @brief Construct a new Shell Volume Constraint
+   * @param compliance The inverse of the stiffness of the constraint. 0
+   * means a perfectly stiff constraint and corresponds to the behavior in the
+   * regular PBD algorithm
+   * @param x0 Matrix of initial positions
+   * @param start Index of first vertex in simulation domain of the volume
+   * @param length Number of vertices for this volume
+   */
+  ShellVolumeConstraint(double compliance, Eigen::MatrixX3d &x0,
+                        Eigen::MatrixX3i triangles, Eigen::Index start,
+                        Eigen::Index length, double pressure);
+
+  /**
+   * @brief Evaluate the volume constraint. The value is computed as @TODO
+   * @param cRec A Constraint Query Record
+   */
+  void solve(ConstraintQueryRecord &cRec) const override;
+
+  /**
+   * @brief Calcualte the volume of a triangles
+   * @param x Vertex positions
+   * @return double, the volume of the mesh
+   */
+  double calculateVolume(const Eigen::MatrixX3d &x) const;
+
+  EConstraintType getType() const override { return EShellVolume; }
+
+private:
+  Eigen::MatrixX3i m_triangles; /// Vertex indices of the triangles
+  double m_init_volume; /// Initial volume, the constraint will try to match
+  double m_pressure;    /// Pressure factor in front of the initial volume
 };

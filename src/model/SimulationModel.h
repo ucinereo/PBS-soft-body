@@ -117,6 +117,7 @@ private:
   std::vector<std::pair<Eigen::Index, Eigen::Index>>
       m_indices; /// Indexing into the full vertex matrix for each object/mesh
   Eigen::VectorXd m_mass;        /// (N x 1)
+  Eigen::VectorXd m_massInv;     /// (N x 1)
   Eigen::MatrixX3d m_positions;  /// (N x 3)
   Eigen::MatrixX3d m_velocities; /// (N x 3)
   std::vector<Constraint *> m_constraints;

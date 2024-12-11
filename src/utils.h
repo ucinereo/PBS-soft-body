@@ -7,6 +7,8 @@
 #pragma once
 
 #include <Eigen/Core>
+#include <igl/readOBJ.h>
+#include <igl/upsample.h>
 
 /**
  * @brief Create a floor mesh, consisting of two triangles, which spans the
@@ -32,4 +34,16 @@ void createFloorMesh(Eigen::MatrixX3d &V, Eigen::MatrixX3i &F) {
   // Set correct matrices for return
   V = floorV;
   F = floorF;
+}
+
+void createCube(Eigen::MatrixX3d &V, Eigen::MatrixX3i &F,
+                const Eigen::Affine3d &M, const int number_of_subdivs = 0) {
+  igl::readOBJ("../assets/cube_1x.obj", V, F);
+
+  if (number_of_subdivs > 0) {
+    igl::upsample(V, F, number_of_subdivs);
+  }
+
+  // Apply ToWorld transform M
+  V = (M * V.transpose()).transpose();
 }

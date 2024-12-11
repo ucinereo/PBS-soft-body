@@ -16,54 +16,38 @@ SimulationModel::SimulationModel() { initialize(); }
 void SimulationModel::initialize() {
   // @TODO: Update this initialization with a scene parsing or something
 
-  // Load the mesh information of the cube
-  // - V is a matrix of shape (N x 3) to store vertex positions
-  // - F is a matrix of shape (N x 3) to store the face indices
-  Eigen::MatrixX3d V;
-  Eigen::MatrixX3i F;
-  //  igl::readOFF("../cube.off", V, F);
-  igl::readOBJ("../assets/cube_1x.obj", V, F);
+  int number_of_subdivisions = 0;
 
-  igl::upsample(V, F, 3);
+  // Simple Rotation
+  auto Rx = Eigen::AngleAxisd(M_PI / 3, Eigen::Vector3d::UnitX());
+  auto Ry = Eigen::AngleAxisd(0, Eigen::Vector3d::UnitY());
+  auto Rz = Eigen::AngleAxisd(M_PI / 3, Eigen::Vector3d::UnitZ());
 
-  // At the beginning the model is flipped by 90 degrees, thus rotate back.
-  Eigen::Matrix3d Rx, Ry, Rz;
-  Rx = Eigen::AngleAxisd(M_PI / 3, Eigen::Vector3d::UnitX());
-  Ry = Eigen::AngleAxisd(0, Eigen::Vector3d::UnitY());
-  Rz = Eigen::AngleAxisd(M_PI / 3, Eigen::Vector3d::UnitZ());
+  // Initialize Cube 1
+  auto T1 = Eigen::Translation3d(Eigen::Vector3d(3, 5, 0));
+  auto R1 = Rx * Ry * Rz;
+  auto S1 = Eigen::Scaling(Eigen::Vector3d(1, 1, 1));
+  Eigen::Affine3d M1 = T1 * R1 * S1;
 
-  Eigen::Matrix3d R = Rx * Ry * Rz;
-  V = (R * V.transpose()).transpose();
-  //  V *= 0.1; // Scale the bunny for better scene representation
-  for (int i = 0; i < V.rows(); i++) {
-    V(i, 1) += 5;
-  }
+  Eigen::MatrixX3d cube1V;
+  Eigen::MatrixX3i cube1F;
+  createCube(cube1V, cube1F, M1, number_of_subdivisions);
+  Mesh cube1(cube1V, cube1F);
+  cube1.updateColor(0.180392f, 0.8f, 0.4431372f);
+  dynamicObjs.push_back(cube1);
 
-  //  // Load the mesh information of the bunny
-  //  // - V is a matrix of shape (N x 3) to store vertex positions
-  //  // - F is a matrix of shape (N x 3) to store the face indices
-  //  Eigen::MatrixXd V;
-  //  Eigen::MatrixXi F;
-  //  igl::readOFF("../bunny.off", V, F);
-  //
-  //  // At the beginning the model is flipped by 90 degrees, thus rotate back.
-  //  Eigen::Matrix3d rotationMatrix;
-  //  rotationMatrix = Eigen::AngleAxisd(-M_PI / 2, Eigen::Vector3d::UnitX());
-  //  V = (rotationMatrix * V.transpose()).transpose();
-  //  V *= 0.1; // Scale the bunny for better scene representation
+  // Initialize Cube 2
+  auto T2 = Eigen::Translation3d(Eigen::Vector3d(-3, 5, 0));
+  auto R2 = Rx * Ry;
+  auto S2 = Eigen::Scaling(Eigen::Vector3d(1, 1, 1));
+  Eigen::Affine3d M2 = T2 * R2 * S2;
 
-  // Create the actual bunny object
-  Mesh bunny(V, F);
-  bunny.updateColor(0.180392f, 0.8f, 0.4431372f);
-  dynamicObjs.push_back(bunny); // Add the object to the dynamics.
-
-  // Create a second bunny which is in the x-direction
-  //  Eigen::Vector3d pos;
-  //  pos << 18.f, 0.f, 0.f;
-  //  Eigen::MatrixXd V2 = V.rowwise() + pos.transpose();
-  //  Mesh bunny2(V2, F);
-  //  bunny2.updateColor(1.f, 0.77f, 0.82f, 1.0f);
-  //  dynamicObjs.push_back(bunny2);
+  Eigen::MatrixX3d cube2V;
+  Eigen::MatrixX3i cube2F;
+  createCube(cube2V, cube2F, M2, number_of_subdivisions);
+  Mesh cube2(cube2V, cube2F);
+  cube2.updateColor(0.8f, 0.4431372f, 0.180392f);
+  dynamicObjs.push_back(cube2);
 
   // Initialize a basic floor mesh as static
   Eigen::MatrixX3d floorV;
@@ -103,24 +87,35 @@ void SimulationModel::initialize() {
                                         .replicate(m_positions.rows(), 1);
 
   //   Distance Constraints for all Triangles
-  double distanceCompliance = 10000; // 1e-9;
-  for (Eigen::Index i = 0; i < F.rows(); i++) {
-    auto *c0 = new DistanceConstraint(distanceCompliance, m_positions, F(i, 0),
-                                      F(i, 1));
-    auto *c1 = new DistanceConstraint(distanceCompliance, m_positions, F(i, 0),
-                                      F(i, 2));
-    auto *c2 = new DistanceConstraint(distanceCompliance, m_positions, F(i, 1),
-                                      F(i, 2));
+  double distanceCompliance = 1; // 1e-9;
+  for (size_t i = 0; i < dynamicObjs.size(); i++) {
+    const Mesh &obj = dynamicObjs[i];
+    Eigen::MatrixX3d V = obj.getVertices();
+    Eigen::MatrixX3i F = obj.getFaces();
 
-    m_constraints.push_back(c0);
-    m_constraints.push_back(c1);
-    m_constraints.push_back(c2);
+    Eigen::Index start = m_indices[i].first;
+
+    for (Eigen::Index j = 0; j < F.rows(); j++) {
+      auto *c0 = new DistanceConstraint(distanceCompliance, m_positions,
+                                        start + F(j, 0), start + F(j, 1));
+      auto *c1 = new DistanceConstraint(distanceCompliance, m_positions,
+                                        start + F(j, 0), start + F(j, 2));
+      auto *c2 = new DistanceConstraint(distanceCompliance, m_positions,
+                                        start + F(j, 1), start + F(j, 2));
+
+      m_constraints.push_back(c0);
+      m_constraints.push_back(c1);
+      m_constraints.push_back(c2);
+    }
   }
 
   // Volume constraint
   double volumeCompliance = 0.1;
   double pressure = 1;
   for (size_t i = 0; i < dynamicObjs.size(); i++) {
+    const Mesh &obj = dynamicObjs[i];
+    Eigen::MatrixX3i F = obj.getFaces();
+
     Eigen::Index start, length;
     std::tie(start, length) = m_indices[i];
     std::cout << start << std::endl;
@@ -142,7 +137,7 @@ void SimulationModel::update(double deltaTime) {
   // Reverse Direction of external force every 3 seconds for 0.5s
   m_time += deltaTime;
   if (m_time >= 10000 && m_time < 10250) {
-    f_ext *= -0.2;
+    f_ext *= -2;
     //    f_ext += Eigen::MatrixX3d::Random(f_ext.rows(), f_ext.cols()) * 0.005;
     f_ext(Eigen::all, 0) += Eigen::RowVectorXd::Ones(f_ext.rows()) * 0.000035;
   } else if (m_time >= 10250) {

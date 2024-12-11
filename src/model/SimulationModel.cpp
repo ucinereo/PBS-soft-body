@@ -125,6 +125,34 @@ void SimulationModel::initialize() {
   }
 }
 
+void SimulationModel::getStaticCollConstraints(
+    const Eigen::MatrixX3d &x,
+    std::vector<Constraint *> &collConstraints) const {
+  Eigen::Vector3d floorNormal(0, 1, 0);
+  double staticMu = 0.9;
+  double kineticMu = 0.9;
+  double collisionCompliance = 1e-9;
+  double frictionCompliance = 1e-9;
+  for (Eigen::Index i = 0; i < x.rows(); i++) {
+    // Check if the vertex is penetrating the floor, and if so add a static
+    // plane collision constraint
+    double penetrationDepth = floorNormal.dot(x.row(i).transpose());
+    if (penetrationDepth < 0) {
+      auto *c0 = new StaticPlaneCollisionConstraint(collisionCompliance,
+                                                    floorNormal, 0.0, i);
+      auto *c1 = new PlaneFrictionConstraint(frictionCompliance, floorNormal,
+                                             staticMu, kineticMu, i);
+
+      collConstraints.push_back(c0);
+      collConstraints.push_back(c1);
+    }
+  }
+}
+
+void SimulationModel::getDynamicCollConstraints(
+    const Eigen::MatrixX3d &x,
+    std::vector<Constraint *> &collConstraints) const {}
+
 void SimulationModel::update(double deltaTime) {
   // Update simulation state using positional-based dynamics or other physics
   // Implementation follows Algorithm 1 in the XPBD paper:
@@ -152,26 +180,8 @@ void SimulationModel::update(double deltaTime) {
   // Collect collision constraints (dynamically, will require more logic once we
   // do collisions between different objects)
   std::vector<Constraint *> collConstraints;
-
-  Eigen::Vector3d floorNormal(0, 1, 0);
-  double staticMu = 0.9;
-  double kineticMu = 0.9;
-  double collisionCompliance = 1e-9;
-  double frictionCompliance = 1e-9;
-  for (Eigen::Index i = 0; i < x.rows(); i++) {
-    // Check if the vertex is penetrating the floor, and if so add a static
-    // plane collision constraint
-    double penetrationDepth = floorNormal.dot(x.row(i).transpose());
-    if (penetrationDepth < 0) {
-      auto *c0 = new StaticPlaneCollisionConstraint(collisionCompliance,
-                                                    floorNormal, 0.0, i);
-      auto *c1 = new PlaneFrictionConstraint(frictionCompliance, floorNormal,
-                                             staticMu, kineticMu, i);
-
-      collConstraints.push_back(c0);
-      collConstraints.push_back(c1);
-    }
-  }
+  this->getStaticCollConstraints(x, collConstraints);
+  this->getDynamicCollConstraints(x, collConstraints);
 
   std::vector<size_t> indices(m_constraints.size() + collConstraints.size());
   std::iota(indices.begin(), indices.end(), 0);

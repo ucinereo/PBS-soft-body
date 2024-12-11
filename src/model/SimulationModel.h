@@ -54,6 +54,14 @@ private:
    */
   void initialize();
 
+  void
+  getStaticCollConstraints(const Eigen::MatrixX3d &x,
+                           std::vector<Constraint *> &collConstraints) const;
+
+  void
+  getDynamicCollConstraints(const Eigen::MatrixX3d &x,
+                            std::vector<Constraint *> &collConstraints) const;
+
   std::vector<Mesh> staticObjs;  ///< Storage of static scene objects
   std::vector<Mesh> dynamicObjs; ///< Storage of dynamic scene objects
 

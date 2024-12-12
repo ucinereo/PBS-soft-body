@@ -6,6 +6,7 @@
 #include "SimulationModel.h"
 #include "../utils.h"
 #include <Eigen/Core>
+#include <igl/copyleft/tetgen/tetrahedralize.h>
 #include <igl/readOBJ.h>
 #include <igl/readOFF.h>
 #include <igl/upsample.h>
@@ -24,7 +25,18 @@ void SimulationModel::initialize() {
   //  igl::readOFF("../cube.off", V, F);
   igl::readOBJ("../assets/cube_1x.obj", V, F);
 
-  igl::upsample(V, F, 3);
+  igl::upsample(V, F, 2);
+
+  Eigen::MatrixXd TV; // Tetrahedral mesh vertices
+  Eigen::MatrixXi TT; // Tetrahedral mesh tetrahedra
+  Eigen::MatrixXi TF; // Boundary faces of the tetrahedral mesh
+
+  // Use igl::copyleft::tetgen::tetrahedralize
+  std::string flags = "pq1.2"; // Quality tetrahedralization, adapt as needed
+  igl::copyleft::tetgen::tetrahedralize(V, F, flags, TV, TT, TF);
+
+  V = TV;
+  F = TF;
 
   // At the beginning the model is flipped by 90 degrees, thus rotate back.
   Eigen::Matrix3d Rx, Ry, Rz;
@@ -53,7 +65,7 @@ void SimulationModel::initialize() {
   //  V *= 0.1; // Scale the bunny for better scene representation
 
   // Create the actual bunny object
-  Mesh bunny(V, F);
+  Mesh bunny(V, F, TT);
   bunny.updateColor(0.180392f, 0.8f, 0.4431372f);
   dynamicObjs.push_back(bunny); // Add the object to the dynamics.
 
@@ -104,35 +116,61 @@ void SimulationModel::initialize() {
 
   //   Distance Constraints for all Triangles
   double distanceCompliance = 10000; // 1e-9;
-  for (Eigen::Index i = 0; i < F.rows(); i++) {
-    auto *c0 = new DistanceConstraint(distanceCompliance, m_positions, F(i, 0),
-                                      F(i, 1));
-    auto *c1 = new DistanceConstraint(distanceCompliance, m_positions, F(i, 0),
-                                      F(i, 2));
-    auto *c2 = new DistanceConstraint(distanceCompliance, m_positions, F(i, 1),
-                                      F(i, 2));
-
+  for (Eigen::Index i = 0; i < TT.rows(); i++) {
+    auto *c0 = new DistanceConstraint(distanceCompliance, m_positions, TT(i, 0),
+                                      TT(i, 1));
+    auto *c1 = new DistanceConstraint(distanceCompliance, m_positions, TT(i, 0),
+                                      TT(i, 2));
+    auto *c2 = new DistanceConstraint(distanceCompliance, m_positions, TT(i, 0),
+                                      TT(i, 3));
+    auto *c3 = new DistanceConstraint(distanceCompliance, m_positions, TT(i, 1),
+                                      TT(i, 2));
+    auto *c4 = new DistanceConstraint(distanceCompliance, m_positions, TT(i, 1),
+                                      TT(i, 3));
+    auto *c5 = new DistanceConstraint(distanceCompliance, m_positions, TT(i, 2),
+                                      TT(i, 3));
+    auto *c6 = new DistanceConstraint(distanceCompliance, m_positions, TT(i, 0),
+                                      TT(i, 1));
     m_constraints.push_back(c0);
     m_constraints.push_back(c1);
     m_constraints.push_back(c2);
+    m_constraints.push_back(c3);
+    m_constraints.push_back(c4);
+    m_constraints.push_back(c5);
+    m_constraints.push_back(c6);
   }
 
-  // Volume constraint
   double volumeCompliance = 0.1;
-  double pressure = 1;
+  double pressure = 10;
+
+  // Volume constraint
+  // for (size_t i = 0; i < dynamicObjs.size(); i++) {
+  //   Eigen::Index start, length;
+  //   std::tie(start, length) = m_indices[i];
+  //   std::cout << start << std::endl;
+  //   auto *cV = new ShellVolumeConstraint(volumeCompliance, m_positions, F,
+  //                                        start, length, pressure);
+  //   m_constraints.push_back(cV);
+  // }
+
+  // Tet-Volume-Constraint
+  double tetCompliace = 0.1;
   for (size_t i = 0; i < dynamicObjs.size(); i++) {
+    const Eigen::MatrixXi TT = dynamicObjs[i].getTetIndices();
     Eigen::Index start, length;
     std::tie(start, length) = m_indices[i];
-    std::cout << start << std::endl;
-    auto *cV = new ShellVolumeConstraint(volumeCompliance, m_positions, F,
-                                         start, length, pressure);
-    m_constraints.push_back(cV);
+    for (Eigen::Index j = 0; j < TT.rows(); j++) {
+      auto *cTet = new TetVolumeConstraint(tetCompliace, m_positions, pressure,
+                                           TT(j, 0) + start, TT(j, 1) + start,
+                                           TT(j, 2) + start, TT(j, 3) + start);
+      m_constraints.push_back(cTet);
+    }
   }
 }
 
 void SimulationModel::update(double deltaTime) {
-  // Update simulation state using positional-based dynamics or other physics
-  // Implementation follows Algorithm 1 in the XPBD paper:
+  // Update simulation state using positional-based dynamics or other
+  // physics Implementation follows Algorithm 1 in the XPBD paper:
   // https://matthias-research.github.io/pages/publications/XPBD.pdf
 
   // Get external forces
@@ -143,7 +181,8 @@ void SimulationModel::update(double deltaTime) {
   m_time += deltaTime;
   if (m_time >= 10000 && m_time < 10250) {
     f_ext *= -0.2;
-    //    f_ext += Eigen::MatrixX3d::Random(f_ext.rows(), f_ext.cols()) * 0.005;
+    //    f_ext += Eigen::MatrixX3d::Random(f_ext.rows(), f_ext.cols()) *
+    //    0.005;
     f_ext(Eigen::all, 0) += Eigen::RowVectorXd::Ones(f_ext.rows()) * 0.000035;
   } else if (m_time >= 10250) {
     m_time = 0;
@@ -154,8 +193,8 @@ void SimulationModel::update(double deltaTime) {
   x += deltaTime * m_velocities;
   x += deltaTime * deltaTime * m_massInv.asDiagonal() * f_ext;
 
-  // Collect collision constraints (dynamically, will require more logic once we
-  // do collisions between different objects)
+  // Collect collision constraints (dynamically, will require more logic
+  // once we do collisions between different objects)
   std::vector<Constraint *> collConstraints;
 
   Eigen::Vector3d floorNormal(0, 1, 0);

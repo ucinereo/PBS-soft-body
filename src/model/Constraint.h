@@ -12,7 +12,8 @@ enum EConstraintType {
   EDistance,
   EStaticPlaneCollision,
   EPlaneFriction,
-  EShellVolume
+  EShellVolume,
+  ETetVolume,
 };
 
 /// Update strategies for the solver, defines what values should be used in the
@@ -296,4 +297,25 @@ private:
   Eigen::MatrixX3i m_triangles; /// Vertex indices of the triangles
   double m_init_volume; /// Initial volume, the constraint will try to match
   double m_pressure;    /// Pressure factor in front of the initial volume
+};
+
+class TetVolumeConstraint : public Constraint {
+public:
+  TetVolumeConstraint(double compliance, Eigen::MatrixX3d &x0, double pressure,
+                      Eigen::Index p0, Eigen::Index p1, Eigen::Index p2,
+                      Eigen::Index p3);
+
+  /**
+   * @brief Evaluate the volume constraint. The value is computed as @TODO
+   * @param cRec A Constraint Query Record
+   */
+  void solve(ConstraintQueryRecord &cRec) const override;
+
+  double calculateVolume(const Eigen::MatrixX3d &x) const;
+
+  EConstraintType getType() const override { return ETetVolume; }
+
+private:
+  double m_init_volume;
+  double m_pressure = 1.f;
 };

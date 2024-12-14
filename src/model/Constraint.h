@@ -109,6 +109,7 @@ protected:
   std::vector<Eigen::Index> m_indices; /// Indices of the relevant vertices
   double
       m_compliance; /// Constraint compliance, corresponds to inverse stiffness
+  bool isActive;    /// Tells if the constraint is enabled or not
 
 public:
   /**
@@ -136,6 +137,17 @@ public:
    * @brief Set the compliance value
    */
   void setCompliance(double compliance) { m_compliance = compliance; }
+
+  /**
+   * @brief get the current is_active status
+   * @return is_active value
+   */
+  bool getIsActive() const { return isActive; }
+
+  /**
+   * @brief Set the isActive status
+   */
+  void setIsActive(bool active) { isActive = active; }
 
   /**
    * @brief Get the constraint alpha
@@ -299,7 +311,7 @@ public:
   double getPressure() const { return m_pressure; }
 
   /**
-   * @brief update the pressure value 
+   * @brief update the pressure value
    * @param pressure the new vlaue the pressure gets updated to
    */
   void setPressure(double pressure) { m_pressure = pressure; }

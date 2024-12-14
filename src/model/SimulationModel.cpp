@@ -226,6 +226,25 @@ void SimulationModel::setPressureValue(double pressure) {
   }
 }
 
+bool SimulationModel::getState(EConstraintType type) {
+  bool isActive = true;
+  for (Constraint *c : m_constraints) {
+    if (c->getType() == type) {
+      isActive = c->getIsActive();
+      return isActive;
+    }
+  }
+  return isActive;
+}
+
+void SimulationModel::setState(EConstraintType type, bool state) {
+  for (Constraint *c : m_constraints) {
+    if (c->getType() == type) {
+      c->setIsActive(state);
+    }
+  }
+}
+
 void SimulationModel::reset() {
 
   V = m_initialpositions;
@@ -382,6 +401,7 @@ void SimulationModel::update(double deltaTime) {
     // plane collision constraint
     double penetrationDepth = floorNormal.dot(x.row(i).transpose());
     if (penetrationDepth < 0) {
+
       auto *c0 = new StaticPlaneCollisionConstraint(collisionCompliance,
                                                     floorNormal, 0.0, i);
       auto *c1 = new PlaneFrictionConstraint(frictionCompliance, floorNormal,
@@ -410,6 +430,10 @@ void SimulationModel::update(double deltaTime) {
         c = m_constraints[i];
       } else {
         c = collConstraints[i - m_constraints.size()];
+      }
+
+      if (!c->getIsActive()) {
+        continue;
       }
 
       Eigen::VectorXd Minv = m_massInv(c->getIndices());

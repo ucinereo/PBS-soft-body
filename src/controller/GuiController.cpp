@@ -3,6 +3,7 @@
  * @brief Defintions of GuiController
  */
 #include "GuiController.h"
+#include "../model/Constraint.h"
 #include "SimulationController.h"
 
 GuiController::GuiController(SimulationController *controller,
@@ -54,9 +55,20 @@ void GuiController::drawMenu(igl::opengl::glfw::Viewer &viewer,
       this->controller->getCompliancePlaneFriction();
   float complianceVolume = this->controller->getComplianceVolume();
   float pressure = this->controller->getPressure();
-  float friction = this->controller->getFriction();
 
   bool running = this->controller->getIsSimulationRunning();
+
+  static bool activVolume = true;
+  static bool activDistance = true;
+  static bool activStaticPlane = true;
+  static bool activFriction = true;
+
+  static bool boolVariable = true;
+  if (ImGui::Checkbox("bool", &boolVariable)) {
+
+    std::cout << "boolVariable: " << std::boolalpha << boolVariable
+              << std::endl;
+  }
 
   if (ImGui::CollapsingHeader("Simulation settings",
                               ImGuiTreeNodeFlags_DefaultOpen)) {
@@ -91,28 +103,34 @@ void GuiController::drawMenu(igl::opengl::glfw::Viewer &viewer,
       this->controller->setTimeStep(timeStep);
     }
 
-    if (ImGui::SliderFloat("friction", &friction, 0.0f, 1.0f)) {
-      std::cout << "current selected friction value is " << friction << "\n";
-      this->controller->setFriction(friction);
-    }
-
-    if (ImGui::SliderFloat("pressure", &pressure, 0.0f, 10.0f)) {
-      std::cout << "current selected pressure value is " << pressure << "\n";
-      this->controller->setPressure(pressure);
-    }
-
     if (ImGui::CollapsingHeader("Distance constraint",
                                 ImGuiTreeNodeFlags_DefaultOpen)) {
+
+      if (ImGui::Checkbox("Distance active", &activDistance)) {
+
+        std::cout << "Is Distance active: " << std::boolalpha << activDistance
+                  << std::endl;
+        this->controller->setState(&activDistance, EDistance);
+      }
       if (ImGui::SliderFloat("distance compliance", &complianceDistance, 0.0f,
                              10000.0f)) {
-        std::cout << "current selected compliance value for distance constraint is "
-                  << complianceDistance << "\n";
+        std::cout
+            << "current selected compliance value for distance constraint is "
+            << complianceDistance << "\n";
         this->controller->setComplianceDistance(complianceDistance);
       }
     }
 
     if (ImGui::CollapsingHeader("StaticPlaneCollision constraint",
                                 ImGuiTreeNodeFlags_DefaultOpen)) {
+
+      if (ImGui::Checkbox("Static Plane collision active", &activStaticPlane)) {
+
+        std::cout << "Is StaticPlaneCollision active: " << std::boolalpha << activStaticPlane
+                  << std::endl;
+        this->controller->setState(&activStaticPlane, EStaticPlaneCollision);
+      }
+
       if (ImGui::SliderFloat("static compliance", &complianceStaticPlane, 0.0f,
                              1.0f)) {
         std::cout << "current selected compliance value for plane collision is "
@@ -123,6 +141,12 @@ void GuiController::drawMenu(igl::opengl::glfw::Viewer &viewer,
 
     if (ImGui::CollapsingHeader("PlaneFriction constraint",
                                 ImGuiTreeNodeFlags_DefaultOpen)) {
+      if (ImGui::Checkbox("Friction active", &activFriction)) {
+        std::cout << "Is Friction active: " << std::boolalpha << activFriction
+                  << std::endl;
+        this->controller->setState(&activFriction, EPlaneFriction);
+      }
+
       if (ImGui::SliderFloat("Plane friction compliance",
                              &compliancePlaneFriction, 0.0f, 1.0f)) {
         std::cout << "current selected compliance value for plane friction is "
@@ -133,11 +157,23 @@ void GuiController::drawMenu(igl::opengl::glfw::Viewer &viewer,
 
     if (ImGui::CollapsingHeader("Volume constraint",
                                 ImGuiTreeNodeFlags_DefaultOpen)) {
+      if (ImGui::Checkbox("Volume active", &activVolume)) {
+
+        std::cout << "Is Volume active: " << std::boolalpha << activVolume
+                  << std::endl;
+        this->controller->setState(&activVolume, EShellVolume);
+      }
+
       if (ImGui::SliderFloat("Volume compliance", &complianceVolume, 0.0f,
                              1.0f)) {
-        std::cout << "current selected compliance value for volume is " << complianceVolume
-                  << "\n";
+        std::cout << "current selected compliance value for volume is "
+                  << complianceVolume << "\n";
         this->controller->setComplianceVolume(complianceVolume);
+      }
+
+      if (ImGui::SliderFloat("pressure", &pressure, 0.0f, 10.0f)) {
+        std::cout << "current selected pressure value is " << pressure << "\n";
+        this->controller->setPressure(pressure);
       }
     }
   }

@@ -87,6 +87,16 @@ double getPressureValue();
  */
 void setPressureValue(double pressure);
 
+/**
+ * @brief get if the constraint is active
+ */
+bool getState(EConstraintType type);
+
+/**
+ * @brief set the constraint to active/inactive
+ */
+void setState(EConstraintType type, bool state);
+
 
   /**
    * @brief Get the mutex lock of the render thread

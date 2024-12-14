@@ -5,6 +5,7 @@
  */
 #pragma once
 
+#include "../model/Constraint.h"
 #include "../model/SimulationModel.h"
 #include "../view/Renderer.h"
 #include "GuiController.h"
@@ -141,6 +142,12 @@ public:
    */
   bool getIsSimulationRunning();
 
+
+  /**
+   * @brief set if the constraint is enabled or not
+   */
+  void setState(bool state, EConstraintType type);
+
 private:
   /**
    * @brief Runs the main simulation loop, which updates the physical model,
@@ -158,9 +165,11 @@ private:
 
   std::thread *simulationThread; ///< Independent physical update thread
 
-  int timeStep = 24; ///< initial time step value of the simulation
+  int timeStep = 24;     ///< initial time step value of the simulation
   float friction = 0.0f; ///< initial friction value
 
   bool isSimulationRunning =
       false; ///< says if the simulation is running or not
+
+  bool status = false;
 };

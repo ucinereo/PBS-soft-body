@@ -153,6 +153,11 @@ bool SimulationController::getIsSimulationRunning() {
   return this->isSimulationRunning;
 }
 
+
+void SimulationController::setState(bool state, EConstraintType type) {
+  model.setState(type, state);
+}
+
 void SimulationController::runSimulationThread() {
   while (isSimulationRunning) {
     auto startTime = std::chrono::high_resolution_clock::now();

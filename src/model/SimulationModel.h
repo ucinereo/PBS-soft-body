@@ -49,7 +49,7 @@ public:
 
   /**
    * @brief set the new compliance value to each static plane collision constraint
-   * @param compliance new value of plane collisio constraint
+   * @param compliance new value of plane collision constraint
    */
   void setComplianceEstaticPlaneCollision(double compliance);
 
@@ -60,9 +60,32 @@ public:
 
   /**
    * @brief set the new compliance value to each plane friction constraint
+   * @param compliance new value of plane friction constraint
    */
   void setComplianceEPlaneFriction(double compliance);
 
+  /**
+   * @brief get the compliance value of the volume constraint
+   */
+  double getComplianceVolume();
+
+  /**
+   * @brief set the new compliance value to each volume constraint
+   * @param compliance new value of volume constraint
+   */
+  void setComplianceVolume(double compliance);
+
+
+/**
+ * @brief get the pressure value
+ */
+double getPressureValue();
+
+/**
+ * @brief set the pressure value to the new pressure
+ * @param pressure new value of pressure
+ */
+void setPressureValue(double pressure);
 
 
   /**

@@ -292,6 +292,10 @@ public:
 
   EConstraintType getType() const override { return EShellVolume; }
 
+  double getPressure() const { return m_pressure; }
+
+  void setPressure(double pressure) { m_pressure = pressure; }
+
 private:
   Eigen::MatrixX3i m_triangles; /// Vertex indices of the triangles
   double m_init_volume; /// Initial volume, the constraint will try to match

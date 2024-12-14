@@ -43,36 +43,43 @@ void SimulationController::setTimeStep(int timeStep) {
 }
 
 double SimulationController::getComplianceStaticPlane() {
-  return this->complianceStaticPlane;
+  return model.getComplianceEStaticPlaneCollision();
 }
 
 void SimulationController::setComplianceStaticPlane(
     double complianceStaticPlane) {
-  this->complianceStaticPlane = complianceStaticPlane;
+  model.setComplianceEstaticPlaneCollision(complianceStaticPlane);
 }
 
 double SimulationController::getComplianceDistance() {
-  return this->complianceDistance;
-  // return getCompliance();
+  return model.getComplianceEDistance();
 }
 
 void SimulationController::setComplianceDistance(double complianceDistance) {
-  this->complianceDistance = complianceDistance;
+  model.setComplianceEDistance(complianceDistance);
 }
 
 double SimulationController::getCompliancePlaneFriction() {
-  return this->compliancePlaneFriction;
+  return model.getComplianceEPlaneFriction();
 }
 
 void SimulationController::setCompliancePlaneFriction(
     double compliancePlaneFriction) {
-  this->compliancePlaneFriction = compliancePlaneFriction;
+  model.setComplianceEPlaneFriction(compliancePlaneFriction);
 }
 
-float SimulationController::getPressure() { return this->pressure; }
+double SimulationController::getComplianceVolume() {
+  return model.getComplianceVolume();
+}
+
+void SimulationController::setComplianceVolume(double complianceVolume) {
+  model.setComplianceVolume(complianceVolume);
+}
+
+float SimulationController::getPressure() { return model.getPressureValue(); }
 
 void SimulationController::setPressure(float pressure) {
-  this->pressure = pressure;
+  model.setPressureValue(pressure);
 }
 
 float SimulationController::getFriction() { return this->friction = friction; }
@@ -83,7 +90,6 @@ void SimulationController::setFriction(float friction) {
 
 void SimulationController::singleStep() {
   this->isSimulationRunning = true;
-  // model.reset();
   model.getLock()->lock();
   model.update(timeStep);
   // Render the scene (lock render thread if necessary)

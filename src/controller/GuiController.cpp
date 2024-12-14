@@ -50,10 +50,11 @@ void GuiController::drawMenu(igl::opengl::glfw::Viewer &viewer,
   int timeStep = this->controller->getTimeStep();
   float complianceDistance = this->controller->getComplianceDistance();
   float complianceStaticPlane = this->controller->getComplianceStaticPlane();
-  float compliancePlaneFriction = this->controller->getCompliancePlaneFriction();
+  float compliancePlaneFriction =
+      this->controller->getCompliancePlaneFriction();
+  float complianceVolume = this->controller->getComplianceVolume();
   float pressure = this->controller->getPressure();
   float friction = this->controller->getFriction();
-
 
   bool running = this->controller->getIsSimulationRunning();
 
@@ -104,7 +105,7 @@ void GuiController::drawMenu(igl::opengl::glfw::Viewer &viewer,
     if (ImGui::CollapsingHeader("Distance constraint",
                                 ImGuiTreeNodeFlags_DefaultOpen)) {
       if (ImGui::SliderFloat("cdistance ompliance", &complianceDistance, 0.0f,
-                             1.0f)) {
+                             10000.0f)) {
         std::cout << "current selected compliance value is "
                   << complianceDistance << "\n";
         this->controller->setComplianceDistance(complianceDistance);
@@ -121,10 +122,23 @@ void GuiController::drawMenu(igl::opengl::glfw::Viewer &viewer,
       }
     }
 
-    if (ImGui::CollapsingHeader("PlaneFriction constraint", ImGuiTreeNodeFlags_DefaultOpen)) {
-      if (ImGui::SliderFloat("Plance friction compliance", &compliancePlaneFriction, 0.0f, 1.0f)) {
-        std::cout << "current selected compliance value is " << compliancePlaneFriction << "\n";
+    if (ImGui::CollapsingHeader("PlaneFriction constraint",
+                                ImGuiTreeNodeFlags_DefaultOpen)) {
+      if (ImGui::SliderFloat("Plane friction compliance",
+                             &compliancePlaneFriction, 0.0f, 1.0f)) {
+        std::cout << "current selected compliance value is "
+                  << compliancePlaneFriction << "\n";
         this->controller->setCompliancePlaneFriction(compliancePlaneFriction);
+      }
+    }
+
+    if (ImGui::CollapsingHeader("Volume constraint",
+                                ImGuiTreeNodeFlags_DefaultOpen)) {
+      if (ImGui::SliderFloat("Volume compliance", &complianceVolume, 0.0f,
+                             1.0f)) {
+        std::cout << "current selected compliance value is " << complianceVolume
+                  << "\n";
+        this->controller->setComplianceVolume(complianceVolume);
       }
     }
   }

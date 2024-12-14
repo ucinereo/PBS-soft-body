@@ -61,7 +61,7 @@ public:
    */
   void setComplianceDistance(double complianceDistance);
 
-   /**
+  /**
    * @brief Getter for compliance value of plane friction constraint
    * @return Current compliance value of plane friction constraint
    */
@@ -73,7 +73,17 @@ public:
    */
   void setCompliancePlaneFriction(double compliancePlaneFriction);
 
+  /**
+   * @brief Getter for compliance value of volume constraint
+   * @return current compliance value of volume constraint
+   */
+  double getComplianceVolume();
 
+  /**
+   * @brief Set compliance parameter of volume constraint
+   * @param complianceVolume compliance value it gets updated to
+   */
+  void setComplianceVolume(double complianceVolume);
 
   /**
    * @brief Getter for pressure value
@@ -149,12 +159,15 @@ private:
   std::thread *simulationThread; ///< Independent physical update thread
 
   int timeStep = 24; ///< initial value 0.5f time step of the simulation
-  double complianceDistance =
-      0.5f; ///< compliance value of the distance constraint
-  double complianceStaticPlane =
-      0.5f;              ///< compliance value of the static plane constraint
-  double compliancePlaneFriction = 0.5f; ///< compliance value of the plane friction constraint
-  float pressure = 1.0f; ///< pressure value of the simulation
+                     //   double complianceDistance =
+  //       0.5f; ///< compliance value of the distance constraint
+  //   double complianceStaticPlane =
+  //       0.5f; ///< compliance value of the static plane constraint
+  //   double compliancePlaneFriction =
+  //       0.5f; ///< compliance value of the plane friction constraint
+  //   double complianceVolume = 0.5f; ///< compliance value of volume
+  //   constraint float pressure = 1.0f;          ///< pressure value of the
+  //   simulation
   float friction = 0.0f;
 
   bool isSimulationRunning =

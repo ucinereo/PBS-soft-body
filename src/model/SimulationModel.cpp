@@ -134,11 +134,12 @@ void SimulationModel::initialize() {
 }
 
 double SimulationModel::getComplianceEDistance() {
-  // m_constraints.getCompliance();
+  double result = 0.0;
   for (Constraint *c : m_constraints) {
-    c->getCompliance();
+    result = c->getCompliance();
+    return result;
   }
-  return 0.0;
+  return result;
 }
 
 void SimulationModel::setComplianceEDistance(double compliance) {
@@ -150,12 +151,14 @@ void SimulationModel::setComplianceEDistance(double compliance) {
 }
 
 double SimulationModel::getComplianceEStaticPlaneCollision() {
+  double result = 0.0;
   for (Constraint *c : m_constraints) {
     if (c->getType() == EStaticPlaneCollision) {
-      c->getCompliance();
+      result = c->getCompliance();
+      return result;
     }
   }
-  return 0.0;
+  return result;
 }
 
 void SimulationModel::setComplianceEstaticPlaneCollision(double compliance) {
@@ -167,18 +170,58 @@ void SimulationModel::setComplianceEstaticPlaneCollision(double compliance) {
 }
 
 double SimulationModel::getComplianceEPlaneFriction() {
+  double result = 0.0;
   for (Constraint *c : m_constraints) {
     if (c->getType() == EPlaneFriction) {
-      c->getCompliance();
+      result = c->getCompliance();
+      return result;
     }
   }
-  return 0.0;
+  return result;
 }
 
 void SimulationModel::setComplianceEPlaneFriction(double compliance) {
   for (Constraint *c : m_constraints) {
     if (c->getType() == EPlaneFriction) {
       c->setCompliance(compliance);
+    }
+  }
+}
+
+double SimulationModel::getComplianceVolume() {
+  double result = 0.0;
+  for (Constraint *c : m_constraints) {
+    if (c->getType() == EShellVolume) {
+      result = c->getCompliance();
+      return result;
+    }
+  }
+  return result;
+}
+
+void SimulationModel::setComplianceVolume(double compliance) {
+  for (Constraint *c : m_constraints) {
+    if (c->getType() == EShellVolume) {
+      c->setCompliance(compliance);
+    }
+  }
+}
+
+double SimulationModel::getPressureValue() {
+  double pressure = 0.0;
+  for (Constraint *c : m_constraints) {
+    if (c->getType() == EShellVolume) {
+      pressure = ((ShellVolumeConstraint *)c)->getPressure();
+      return pressure;
+    }
+  }
+  return pressure;
+}
+
+void SimulationModel::setPressureValue(double pressure) {
+  for (Constraint *c : m_constraints) {
+    if (c->getType() == EShellVolume) {
+      ((ShellVolumeConstraint *)c)->setPressure(pressure);
     }
   }
 }
@@ -218,18 +261,8 @@ void SimulationModel::reset() {
   // Reinitialize constraints
   m_constraints.clear(); // Clear the existing constraints
 
-  // Re-add distance constraints between all vertex pairs
-  double crossDistanceCompliance = 30000;
-  for (Eigen::Index i = 0; i < m_positions.rows(); i++) {
-    for (Eigen::Index j = i + 1; j < m_positions.rows(); j++) {
-      auto *c =
-          new DistanceConstraint(crossDistanceCompliance, m_positions, i, j);
-      m_constraints.push_back(c);
-    }
-  }
-
-  // Re-add distance constraints for all triangles
-  double distanceCompliance = 5000;
+  // Distance Constraints for all Triangles
+  double distanceCompliance = 10000; // 1e-9;
   for (Eigen::Index i = 0; i < F.rows(); i++) {
     auto *c0 = new DistanceConstraint(distanceCompliance, m_positions, F(i, 0),
                                       F(i, 1));
@@ -243,16 +276,28 @@ void SimulationModel::reset() {
     m_constraints.push_back(c2);
   }
 
+  // Volume constraint
+  double volumeCompliance = 0.1;
+  double pressure = 1;
+  for (size_t i = 0; i < dynamicObjs.size(); i++) {
+    Eigen::Index start, length;
+    std::tie(start, length) = m_indices[i];
+    std::cout << start << std::endl;
+    auto *cV = new ShellVolumeConstraint(volumeCompliance, m_positions, F,
+                                         start, length, pressure);
+    m_constraints.push_back(cV);
+  }
+
   std::cout << "Simulation has been reset to its initial state." << std::endl;
 }
 
 void SimulationModel::exportMesh() {
   // get the current dynamic objects
-  auto &list = this->getDynamics();
-  Mesh mesh = list[0];
+  auto &dynamicObjects = this->getDynamics();
+  Mesh dynamicMeshs = dynamicObjects[0];
   // get Vertices and faces of mesh
-  Eigen::MatrixX3d V_export = mesh.getVertices();
-  Eigen::MatrixX3i F_export = mesh.getFaces();
+  Eigen::MatrixX3d V_export = dynamicMeshs.getVertices();
+  Eigen::MatrixX3i F_export = dynamicMeshs.getFaces();
 
   // @todo: implement an export Mesh that handles more than one object using a
   // loop
@@ -260,7 +305,7 @@ void SimulationModel::exportMesh() {
   // @todo: check if static objects also have to be exported
   // int index_V = 0;
   // int index_F = 0;
-  // for (Mesh m : list) {
+  // for (Mesh m : dynamicObjects) {
   //   // get current Vertices and Faces
   //   Eigen::MatrixX3d m_V = m.getVertices();
   //   Eigen::MatrixX3i m_F = m.getFaces();
@@ -273,6 +318,22 @@ void SimulationModel::exportMesh() {
   //   F_export.middleRows(num_rows_F, index_F) = m_F;
 
   //   // update index
+  //   index_V += num_rows_V;
+  //   index_F += num_rows_F;
+  // }
+  // auto &staticObjects = this->getStatics();
+  // for (Mesh m : staticObjects) {
+  //   Eigen::MatrixX3d m_V = m.getVertices();
+  //   Eigen::MatrixX3i m_F = m.getFaces();
+
+  //   // add Vertices and Faces to the Matrix
+  //   const Eigen::Index num_rows_V = m.numVertices();
+  //   V_export.middleRows(num_rows_V, index_V) = m_V;
+
+  //   const Eigen::Index num_rows_F = m.numFaces();
+  //   F_export.middleRows(num_rows_F, index_F) = m_F;
+
+  //   //update index
   //   index_V += num_rows_V;
   //   index_F += num_rows_F;
   // }

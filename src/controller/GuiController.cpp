@@ -67,9 +67,8 @@ void GuiController::drawMenu(igl::opengl::glfw::Viewer &viewer,
     }
 
     if (ImGui::Button("Reset Simulation", ImVec2(button_width, 0))) {
-      std::cout << "not implemented yet \n";
+      std::cout << "simulation is reset";
       this->controller->resetSimulation();
-      // this->controller->resetSimulation();
     }
 
     if (ImGui::Button("Start/Stop Simulation", ImVec2(button_width, 0))) {
@@ -104,9 +103,9 @@ void GuiController::drawMenu(igl::opengl::glfw::Viewer &viewer,
 
     if (ImGui::CollapsingHeader("Distance constraint",
                                 ImGuiTreeNodeFlags_DefaultOpen)) {
-      if (ImGui::SliderFloat("cdistance ompliance", &complianceDistance, 0.0f,
+      if (ImGui::SliderFloat("distance compliance", &complianceDistance, 0.0f,
                              10000.0f)) {
-        std::cout << "current selected compliance value is "
+        std::cout << "current selected compliance value for distance constraint is "
                   << complianceDistance << "\n";
         this->controller->setComplianceDistance(complianceDistance);
       }
@@ -116,7 +115,7 @@ void GuiController::drawMenu(igl::opengl::glfw::Viewer &viewer,
                                 ImGuiTreeNodeFlags_DefaultOpen)) {
       if (ImGui::SliderFloat("static compliance", &complianceStaticPlane, 0.0f,
                              1.0f)) {
-        std::cout << "current selected compliance value is "
+        std::cout << "current selected compliance value for plane collision is "
                   << complianceStaticPlane << "\n";
         this->controller->setComplianceStaticPlane(complianceStaticPlane);
       }
@@ -126,7 +125,7 @@ void GuiController::drawMenu(igl::opengl::glfw::Viewer &viewer,
                                 ImGuiTreeNodeFlags_DefaultOpen)) {
       if (ImGui::SliderFloat("Plane friction compliance",
                              &compliancePlaneFriction, 0.0f, 1.0f)) {
-        std::cout << "current selected compliance value is "
+        std::cout << "current selected compliance value for plane friction is "
                   << compliancePlaneFriction << "\n";
         this->controller->setCompliancePlaneFriction(compliancePlaneFriction);
       }
@@ -136,7 +135,7 @@ void GuiController::drawMenu(igl::opengl::glfw::Viewer &viewer,
                                 ImGuiTreeNodeFlags_DefaultOpen)) {
       if (ImGui::SliderFloat("Volume compliance", &complianceVolume, 0.0f,
                              1.0f)) {
-        std::cout << "current selected compliance value is " << complianceVolume
+        std::cout << "current selected compliance value for volume is " << complianceVolume
                   << "\n";
         this->controller->setComplianceVolume(complianceVolume);
       }

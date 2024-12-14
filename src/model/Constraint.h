@@ -292,8 +292,16 @@ public:
 
   EConstraintType getType() const override { return EShellVolume; }
 
+  /**
+   * @brief get the current pressure value
+   * @return the current pressure value
+   */
   double getPressure() const { return m_pressure; }
 
+  /**
+   * @brief update the pressure value 
+   * @param pressure the new vlaue the pressure gets updated to
+   */
   void setPressure(double pressure) { m_pressure = pressure; }
 
 private:

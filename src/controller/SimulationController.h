@@ -158,17 +158,8 @@ private:
 
   std::thread *simulationThread; ///< Independent physical update thread
 
-  int timeStep = 24; ///< initial value 0.5f time step of the simulation
-                     //   double complianceDistance =
-  //       0.5f; ///< compliance value of the distance constraint
-  //   double complianceStaticPlane =
-  //       0.5f; ///< compliance value of the static plane constraint
-  //   double compliancePlaneFriction =
-  //       0.5f; ///< compliance value of the plane friction constraint
-  //   double complianceVolume = 0.5f; ///< compliance value of volume
-  //   constraint float pressure = 1.0f;          ///< pressure value of the
-  //   simulation
-  float friction = 0.0f;
+  int timeStep = 24; ///< initial time step value of the simulation
+  float friction = 0.0f; ///< initial friction value
 
   bool isSimulationRunning =
       false; ///< says if the simulation is running or not

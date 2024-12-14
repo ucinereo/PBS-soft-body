@@ -39,7 +39,6 @@ int SimulationController::getTimeStep() { return this->timeStep; }
 
 void SimulationController::setTimeStep(int timeStep) {
   this->timeStep = timeStep;
-  this->simulationSpeed = std::round(1000 / timeStep);
 }
 
 double SimulationController::getComplianceStaticPlane() {
@@ -110,6 +109,7 @@ void SimulationController::resetSimulation() {
   this->isSimulationRunning = false;
 
   model.getLock()->lock();
+  // reset the model to the initial positions
   model.reset();
 
   // Render the scene (lock render thread if necessary)

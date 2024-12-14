@@ -153,7 +153,6 @@ bool SimulationController::getIsSimulationRunning() {
   return this->isSimulationRunning;
 }
 
-
 void SimulationController::setState(bool state, EConstraintType type) {
   model.setState(type, state);
 }

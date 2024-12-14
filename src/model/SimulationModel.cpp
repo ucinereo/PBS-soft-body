@@ -226,17 +226,6 @@ void SimulationModel::setPressureValue(double pressure) {
   }
 }
 
-bool SimulationModel::getState(EConstraintType type) {
-  bool isActive = true;
-  for (Constraint *c : m_constraints) {
-    if (c->getType() == type) {
-      isActive = c->getIsActive();
-      return isActive;
-    }
-  }
-  return isActive;
-}
-
 void SimulationModel::setState(EConstraintType type, bool state) {
   for (Constraint *c : m_constraints) {
     if (c->getType() == type) {
@@ -432,6 +421,7 @@ void SimulationModel::update(double deltaTime) {
         c = collConstraints[i - m_constraints.size()];
       }
 
+      // if the constraint is not enabled, skip the update step
       if (!c->getIsActive()) {
         continue;
       }

@@ -63,13 +63,6 @@ void GuiController::drawMenu(igl::opengl::glfw::Viewer &viewer,
   static bool activStaticPlane = true;
   static bool activFriction = true;
 
-  static bool boolVariable = true;
-  if (ImGui::Checkbox("bool", &boolVariable)) {
-
-    std::cout << "boolVariable: " << std::boolalpha << boolVariable
-              << std::endl;
-  }
-
   if (ImGui::CollapsingHeader("Simulation settings",
                               ImGuiTreeNodeFlags_DefaultOpen)) {
 
@@ -126,8 +119,8 @@ void GuiController::drawMenu(igl::opengl::glfw::Viewer &viewer,
 
       if (ImGui::Checkbox("Static Plane collision active", &activStaticPlane)) {
 
-        std::cout << "Is StaticPlaneCollision active: " << std::boolalpha << activStaticPlane
-                  << std::endl;
+        std::cout << "Is StaticPlaneCollision active: " << std::boolalpha
+                  << activStaticPlane << std::endl;
         this->controller->setState(&activStaticPlane, EStaticPlaneCollision);
       }
 

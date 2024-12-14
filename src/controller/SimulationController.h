@@ -142,7 +142,6 @@ public:
    */
   bool getIsSimulationRunning();
 
-
   /**
    * @brief set if the constraint is enabled or not
    */
@@ -170,6 +169,4 @@ private:
 
   bool isSimulationRunning =
       false; ///< says if the simulation is running or not
-
-  bool status = false;
 };

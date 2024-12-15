@@ -143,6 +143,7 @@ double SimulationModel::getComplianceEDistance() {
 }
 
 void SimulationModel::setComplianceEDistance(double compliance) {
+  std::cout << "Set distance compliance!\n";
   for (Constraint *c : m_constraints) {
     if (c->getType() == EDistance) {
       c->setCompliance(compliance);

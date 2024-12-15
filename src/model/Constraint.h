@@ -109,7 +109,7 @@ protected:
   std::vector<Eigen::Index> m_indices; /// Indices of the relevant vertices
   double
       m_compliance; /// Constraint compliance, corresponds to inverse stiffness
-  bool isActive;    /// Status of the constraint: is it enabled or not
+  bool isActive = true; /// Status of the constraint: is it enabled or not
 
 public:
   /**

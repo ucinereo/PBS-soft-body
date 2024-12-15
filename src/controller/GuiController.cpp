@@ -58,10 +58,10 @@ void GuiController::drawMenu(igl::opengl::glfw::Viewer &viewer,
 
   bool running = this->controller->getIsSimulationRunning();
 
-  static bool activVolume = true;
-  static bool activDistance = true;
-  static bool activStaticPlane = true;
-  static bool activFriction = true;
+  static bool activeVolume = true;
+  static bool activeDistance = true;
+  static bool activeStaticPlane = true;
+  static bool activeFriction = true;
 
   if (ImGui::CollapsingHeader("Simulation settings",
                               ImGuiTreeNodeFlags_DefaultOpen)) {
@@ -99,11 +99,11 @@ void GuiController::drawMenu(igl::opengl::glfw::Viewer &viewer,
     if (ImGui::CollapsingHeader("Distance constraint",
                                 ImGuiTreeNodeFlags_DefaultOpen)) {
 
-      if (ImGui::Checkbox("Distance active", &activDistance)) {
+      if (ImGui::Checkbox("Distance active", &activeDistance)) {
 
-        std::cout << "Is Distance active: " << std::boolalpha << activDistance
+        std::cout << "Is Distance active: " << std::boolalpha << activeDistance
                   << std::endl;
-        this->controller->setState(&activDistance, EDistance);
+        this->controller->setState(activeDistance, EDistance);
       }
       if (ImGui::SliderFloat("distance compliance", &complianceDistance, 0.0f,
                              10000.0f)) {
@@ -117,11 +117,12 @@ void GuiController::drawMenu(igl::opengl::glfw::Viewer &viewer,
     if (ImGui::CollapsingHeader("StaticPlaneCollision constraint",
                                 ImGuiTreeNodeFlags_DefaultOpen)) {
 
-      if (ImGui::Checkbox("Static Plane collision active", &activStaticPlane)) {
+      if (ImGui::Checkbox("Static Plane collision active",
+                          &activeStaticPlane)) {
 
         std::cout << "Is StaticPlaneCollision active: " << std::boolalpha
-                  << activStaticPlane << std::endl;
-        this->controller->setState(&activStaticPlane, EStaticPlaneCollision);
+                  << activeStaticPlane << std::endl;
+        this->controller->setState(activeStaticPlane, EStaticPlaneCollision);
       }
 
       if (ImGui::SliderFloat("static compliance", &complianceStaticPlane, 0.0f,
@@ -134,10 +135,10 @@ void GuiController::drawMenu(igl::opengl::glfw::Viewer &viewer,
 
     if (ImGui::CollapsingHeader("PlaneFriction constraint",
                                 ImGuiTreeNodeFlags_DefaultOpen)) {
-      if (ImGui::Checkbox("Friction active", &activFriction)) {
-        std::cout << "Is Friction active: " << std::boolalpha << activFriction
+      if (ImGui::Checkbox("Friction active", &activeFriction)) {
+        std::cout << "Is Friction active: " << std::boolalpha << activeFriction
                   << std::endl;
-        this->controller->setState(&activFriction, EPlaneFriction);
+        this->controller->setState(activeFriction, EPlaneFriction);
       }
 
       if (ImGui::SliderFloat("Plane friction compliance",
@@ -150,11 +151,11 @@ void GuiController::drawMenu(igl::opengl::glfw::Viewer &viewer,
 
     if (ImGui::CollapsingHeader("Volume constraint",
                                 ImGuiTreeNodeFlags_DefaultOpen)) {
-      if (ImGui::Checkbox("Volume active", &activVolume)) {
+      if (ImGui::Checkbox("Volume active", &activeVolume)) {
 
-        std::cout << "Is Volume active: " << std::boolalpha << activVolume
+        std::cout << "Is Volume active: " << std::boolalpha << activeVolume
                   << std::endl;
-        this->controller->setState(&activVolume, EShellVolume);
+        this->controller->setState(activeVolume, EShellVolume);
       }
 
       if (ImGui::SliderFloat("Volume compliance", &complianceVolume, 0.0f,

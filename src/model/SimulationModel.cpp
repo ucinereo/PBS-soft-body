@@ -23,11 +23,9 @@ void SimulationModel::initialize() {
   // - F is a matrix of shape (N x 3) to store the face indices
   Eigen::MatrixX3d V;
   Eigen::MatrixX3i F;
-  //  igl::readOFF("../cube.off", V, F);
   igl::readOBJ("../assets/rubber_duck.obj", V, F);
 
-  // igl::upsample(V, F, 2);
-
+  // Prepare tet-gen data matrices
   Eigen::MatrixXd TV; // Tetrahedral mesh vertices
   Eigen::MatrixXi TT; // Tetrahedral mesh tetrahedra
   Eigen::MatrixXi TF; // Boundary faces of the tetrahedral mesh
@@ -39,35 +37,22 @@ void SimulationModel::initialize() {
   V = TV;
   F = TF;
 
-  // At the beginning the model is flipped by 90 degrees, thus rotate back.
+  // Prepare some rotation matrices, change as needed
   Eigen::Matrix3d Rx, Ry, Rz;
   Rx = Eigen::AngleAxisd(M_PI / 3, Eigen::Vector3d::UnitX());
   Ry = Eigen::AngleAxisd(0, Eigen::Vector3d::UnitY());
   Rz = Eigen::AngleAxisd(M_PI / 3, Eigen::Vector3d::UnitZ());
 
+  // The ducky only needs rotation :)
   Eigen::Matrix3d R = Ry;
   V = (R * V.transpose()).transpose();
-  //  V *= 0.1; // Scale the bunny for better scene representation
   for (int i = 0; i < V.rows(); i++) {
     V(i, 1) += 5;
   }
 
   m_initialpositions = Eigen::MatrixX3d(V);
 
-  //  // Load the mesh information of the bunny
-  //  // - V is a matrix of shape (N x 3) to store vertex positions
-  //  // - F is a matrix of shape (N x 3) to store the face indices
-  //  Eigen::MatrixXd V;
-  //  Eigen::MatrixXi F;
-  //  igl::readOFF("../bunny.off", V, F);
-  //
-  //  // At the beginning the model is flipped by 90 degrees, thus rotate back.
-  //  Eigen::Matrix3d rotationMatrix;
-  //  rotationMatrix = Eigen::AngleAxisd(-M_PI / 2, Eigen::Vector3d::UnitX());
-  //  V = (rotationMatrix * V.transpose()).transpose();
-  //  V *= 0.1; // Scale the bunny for better scene representation
-
-  // Load a second bunny
+  // Load a second ducky
   Eigen::MatrixX3d V2 = V;
   Eigen::MatrixX3i F2 = F;
   Eigen::MatrixXi TT2 = TT;
@@ -85,14 +70,6 @@ void SimulationModel::initialize() {
   Mesh bunny2(V2, F2, TT2);
   bunny2.updateColor(0.94509804, 0.76862745, 0.65882353);
   dynamicObjs.push_back(bunny2); // Add the object to the dynamics.
-
-  // Create a second bunny which is in the x-direction
-  //  Eigen::Vector3d pos;
-  //  pos << 18.f, 0.f, 0.f;
-  //  Eigen::MatrixXd V2 = V.rowwise() + pos.transpose();
-  //  Mesh bunny2(V2, F);
-  //  bunny2.updateColor(1.f, 0.77f, 0.82f, 1.0f);
-  //  dynamicObjs.push_back(bunny2);
 
   // Initialize a basic floor mesh as static
   Eigen::MatrixX3d floorV;
@@ -138,6 +115,7 @@ void SimulationModel::initialize() {
     Eigen::Index start, length;
     std::tie(start, length) = m_indices[i];
     for (Eigen::Index j = 0; j < TT.rows(); j++) {
+      // Add a distance constraint for each Tet-Edge
       auto *c0 = new DistanceConstraint(distanceCompliance, m_positions,
                                         TT(j, 0) + start, TT(j, 1) + start);
       auto *c1 = new DistanceConstraint(distanceCompliance, m_positions,
@@ -164,16 +142,6 @@ void SimulationModel::initialize() {
 
   double volumeCompliance = 0.1;
   double pressure = 10;
-
-  // Volume constraint
-  // for (size_t i = 0; i < dynamicObjs.size(); i++) {
-  //   Eigen::Index start, length;
-  //   std::tie(start, length) = m_indices[i];
-  //   std::cout << start << std::endl;
-  //   auto *cV = new ShellVolumeConstraint(volumeCompliance, m_positions, F,
-  //                                        start, length, pressure);
-  //   m_constraints.push_back(cV);
-  // }
 
   // Tet-Volume-Constraint
   double tetCompliace = 1.0;
@@ -259,7 +227,7 @@ double SimulationModel::getComplianceVolume() {
 
 void SimulationModel::setComplianceVolume(double compliance) {
   for (Constraint *c : m_constraints) {
-    if (c->getType() == EShellVolume) {
+    if (c->getType() == ETetVolume) {
       c->setCompliance(compliance);
     }
   }
@@ -268,8 +236,8 @@ void SimulationModel::setComplianceVolume(double compliance) {
 double SimulationModel::getPressureValue() {
   double pressure = 0.0;
   for (Constraint *c : m_constraints) {
-    if (c->getType() == EShellVolume) {
-      pressure = ((ShellVolumeConstraint *)c)->getPressure();
+    if (c->getType() == ETetVolume) {
+      pressure = ((TetVolumeConstraint *)c)->getPressure();
       return pressure;
     }
   }
@@ -278,8 +246,8 @@ double SimulationModel::getPressureValue() {
 
 void SimulationModel::setPressureValue(double pressure) {
   for (Constraint *c : m_constraints) {
-    if (c->getType() == EShellVolume) {
-      ((ShellVolumeConstraint *)c)->setPressure(pressure);
+    if (c->getType() == ETetVolume) {
+      ((TetVolumeConstraint *)c)->setPressure(pressure);
     }
   }
 }
@@ -293,66 +261,16 @@ void SimulationModel::setState(EConstraintType type, bool state) {
 }
 
 void SimulationModel::reset() {
-
-  V = m_initialpositions;
-
-  m_indices.clear();
-  m_time = 0;
-
-  // Reset positions to the initial state
-  m_positions = m_initialpositions;
-
+  // Reset all the positions
   for (size_t i = 0; i < dynamicObjs.size(); i++) {
     Eigen::Index start, length;
     std::tie(start, length) = m_indices[i];
-    dynamicObjs[i].updateVertices(m_positions.block(start, 0, length, 3));
+    dynamicObjs[i].updateVertices(dynamicObjs[i].getInitialPositions());
+    m_positions.block(start, 0, length, 3) = dynamicObjs[i].getVertices();
   }
 
-  Eigen::Index totalNumVertices = 0;
-  for (Mesh &mesh : dynamicObjs) {
-    Eigen::Index start = totalNumVertices;
-    Eigen::Index length = mesh.numVertices();
-    m_indices.push_back(std::pair<Eigen::Index, Eigen::Index>(start, length));
-    totalNumVertices += length;
-  }
-
-  // Reset velocities to zero
-  m_velocities = Eigen::MatrixX3d::Zero(m_positions.rows(), m_positions.cols());
-
-  // Reset forces such as gravity
-  m_gravity = m_mass.asDiagonal() * Eigen::Vector3d(0, m_gravityAccel, 0)
-                                        .transpose()
-                                        .replicate(m_positions.rows(), 1);
-
-  // Reinitialize constraints
-  m_constraints.clear(); // Clear the existing constraints
-
-  // Distance Constraints for all Triangles
-  double distanceCompliance = 10000; // 1e-9;
-  for (Eigen::Index i = 0; i < F.rows(); i++) {
-    auto *c0 = new DistanceConstraint(distanceCompliance, m_positions, F(i, 0),
-                                      F(i, 1));
-    auto *c1 = new DistanceConstraint(distanceCompliance, m_positions, F(i, 0),
-                                      F(i, 2));
-    auto *c2 = new DistanceConstraint(distanceCompliance, m_positions, F(i, 1),
-                                      F(i, 2));
-
-    m_constraints.push_back(c0);
-    m_constraints.push_back(c1);
-    m_constraints.push_back(c2);
-  }
-
-  // Volume constraint
-  double volumeCompliance = 0.1;
-  double pressure = 1;
-  for (size_t i = 0; i < dynamicObjs.size(); i++) {
-    Eigen::Index start, length;
-    std::tie(start, length) = m_indices[i];
-    std::cout << start << std::endl;
-    auto *cV = new ShellVolumeConstraint(volumeCompliance, m_positions, F,
-                                         start, length, pressure);
-    m_constraints.push_back(cV);
-  }
+  // Reset the velocities
+  m_velocities.setZero();
 
   std::cout << "Simulation has been reset to its initial state." << std::endl;
 }

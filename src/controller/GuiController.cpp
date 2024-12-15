@@ -155,7 +155,7 @@ void GuiController::drawMenu(igl::opengl::glfw::Viewer &viewer,
 
         std::cout << "Is Volume active: " << std::boolalpha << activeVolume
                   << std::endl;
-        this->controller->setState(activeVolume, EShellVolume);
+        this->controller->setState(activeVolume, ETetVolume);
       }
 
       if (ImGui::SliderFloat("Volume compliance", &complianceVolume, 0.0f,

@@ -51,7 +51,17 @@ public:
    */
   const Eigen::MatrixX3i getFaces() const;
 
+  /**
+   * @brief Get the tetrahedra inices (matrix of shape (n x 4))
+   * @return Tet index matrix
+   */
   const Eigen::MatrixXi getTetIndices() const;
+
+  /**
+   * @brief Get the Initial Positions matrix
+   * @return const Eigen::MatrixX3i
+   */
+  const Eigen::MatrixX3d getInitialPositions() const;
 
   /**
    * @brief Get the number of faces.
@@ -96,9 +106,10 @@ public:
 private:
   // @TODO: Currently stores the vertex positions directly, might be smart to
   // add an origin position just like in the PBS example projects.
-  Eigen::MatrixX3d V; ///< Vertex matrix of shape (N x 3)
-  Eigen::MatrixX3i F; ///< Face matrix of shape (N x 3)
-  Eigen::MatrixXi TT; ///< Tet-mesh matrix of shape (N x 4)
+  Eigen::MatrixX3d V;      ///< Vertex matrix of shape (N x 3)
+  Eigen::MatrixX3d V_init; ///< Initial Vertex Positions
+  Eigen::MatrixX3i F;      ///< Face matrix of shape (N x 3)
+  Eigen::MatrixXi TT;      ///< Tet-mesh matrix of shape (N x 4)
   // @TODO: Update single color vector with color matrix (see libigl)
   Eigen::RowVector3d color =
       Eigen::RowVector3d(0.2f, 0.2f, 0.2f); ///< Mesh color

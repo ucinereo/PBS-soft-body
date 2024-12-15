@@ -110,6 +110,7 @@ protected:
   std::vector<Eigen::Index> m_indices; /// Indices of the relevant vertices
   double
       m_compliance; /// Constraint compliance, corresponds to inverse stiffness
+  bool isActive = true; /// Status of the constraint: is it enabled or not
 
 public:
   /**
@@ -137,6 +138,17 @@ public:
    * @brief Set the compliance value
    */
   void setCompliance(double compliance) { m_compliance = compliance; }
+
+  /**
+   * @brief get the current is_active status
+   * @return is_active value
+   */
+  bool getIsActive() const { return isActive; }
+
+  /**
+   * @brief Set the isActive status
+   */
+  void setIsActive(bool active) { isActive = active; }
 
   /**
    * @brief Get the constraint alpha
@@ -292,6 +304,18 @@ public:
   double calculateVolume(const Eigen::MatrixX3d &x) const;
 
   EConstraintType getType() const override { return EShellVolume; }
+
+  /**
+   * @brief get the current pressure value
+   * @return the current pressure value
+   */
+  double getPressure() const { return m_pressure; }
+
+  /**
+   * @brief update the pressure value
+   * @param pressure the new vlaue the pressure gets updated to
+   */
+  void setPressure(double pressure) { m_pressure = pressure; }
 
 private:
   Eigen::MatrixX3i m_triangles; /// Vertex indices of the triangles

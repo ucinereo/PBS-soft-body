@@ -10,6 +10,7 @@
 #include <igl/readOBJ.h>
 #include <igl/readOFF.h>
 #include <igl/upsample.h>
+#include <igl/writeOBJ.h>
 #include <iostream>
 
 SimulationModel::SimulationModel() { initialize(); }
@@ -50,6 +51,8 @@ void SimulationModel::initialize() {
   for (int i = 0; i < V.rows(); i++) {
     V(i, 1) += 5;
   }
+
+  m_initialpositions = Eigen::MatrixX3d(V);
 
   //  // Load the mesh information of the bunny
   //  // - V is a matrix of shape (N x 3) to store vertex positions
@@ -187,6 +190,226 @@ void SimulationModel::initialize() {
   }
 }
 
+double SimulationModel::getComplianceEDistance() {
+  double result = 0.0;
+  for (Constraint *c : m_constraints) {
+    result = c->getCompliance();
+    return result;
+  }
+  return result;
+}
+
+void SimulationModel::setComplianceEDistance(double compliance) {
+  std::cout << "Set distance compliance!\n";
+  for (Constraint *c : m_constraints) {
+    if (c->getType() == EDistance) {
+      c->setCompliance(compliance);
+    }
+  }
+}
+
+double SimulationModel::getComplianceEStaticPlaneCollision() {
+  double result = 0.0;
+  for (Constraint *c : m_constraints) {
+    if (c->getType() == EStaticPlaneCollision) {
+      result = c->getCompliance();
+      return result;
+    }
+  }
+  return result;
+}
+
+void SimulationModel::setComplianceEstaticPlaneCollision(double compliance) {
+  for (Constraint *c : m_constraints) {
+    if (c->getType() == EStaticPlaneCollision) {
+      c->setCompliance(compliance);
+    }
+  }
+}
+
+double SimulationModel::getComplianceEPlaneFriction() {
+  double result = 0.0;
+  for (Constraint *c : m_constraints) {
+    if (c->getType() == EPlaneFriction) {
+      result = c->getCompliance();
+      return result;
+    }
+  }
+  return result;
+}
+
+void SimulationModel::setComplianceEPlaneFriction(double compliance) {
+  for (Constraint *c : m_constraints) {
+    if (c->getType() == EPlaneFriction) {
+      c->setCompliance(compliance);
+    }
+  }
+}
+
+double SimulationModel::getComplianceVolume() {
+  double result = 0.0;
+  for (Constraint *c : m_constraints) {
+    if (c->getType() == EShellVolume) {
+      result = c->getCompliance();
+      return result;
+    }
+  }
+  return result;
+}
+
+void SimulationModel::setComplianceVolume(double compliance) {
+  for (Constraint *c : m_constraints) {
+    if (c->getType() == EShellVolume) {
+      c->setCompliance(compliance);
+    }
+  }
+}
+
+double SimulationModel::getPressureValue() {
+  double pressure = 0.0;
+  for (Constraint *c : m_constraints) {
+    if (c->getType() == EShellVolume) {
+      pressure = ((ShellVolumeConstraint *)c)->getPressure();
+      return pressure;
+    }
+  }
+  return pressure;
+}
+
+void SimulationModel::setPressureValue(double pressure) {
+  for (Constraint *c : m_constraints) {
+    if (c->getType() == EShellVolume) {
+      ((ShellVolumeConstraint *)c)->setPressure(pressure);
+    }
+  }
+}
+
+void SimulationModel::setState(EConstraintType type, bool state) {
+  for (Constraint *c : m_constraints) {
+    if (c->getType() == type) {
+      c->setIsActive(state);
+    }
+  }
+}
+
+void SimulationModel::reset() {
+
+  V = m_initialpositions;
+
+  m_indices.clear();
+  m_time = 0;
+
+  // Reset positions to the initial state
+  m_positions = m_initialpositions;
+
+  for (size_t i = 0; i < dynamicObjs.size(); i++) {
+    Eigen::Index start, length;
+    std::tie(start, length) = m_indices[i];
+    dynamicObjs[i].updateVertices(m_positions.block(start, 0, length, 3));
+  }
+
+  Eigen::Index totalNumVertices = 0;
+  for (Mesh &mesh : dynamicObjs) {
+    Eigen::Index start = totalNumVertices;
+    Eigen::Index length = mesh.numVertices();
+    m_indices.push_back(std::pair<Eigen::Index, Eigen::Index>(start, length));
+    totalNumVertices += length;
+  }
+
+  // Reset velocities to zero
+  m_velocities = Eigen::MatrixX3d::Zero(m_positions.rows(), m_positions.cols());
+
+  // Reset forces such as gravity
+  m_gravity = m_mass.asDiagonal() * Eigen::Vector3d(0, m_gravityAccel, 0)
+                                        .transpose()
+                                        .replicate(m_positions.rows(), 1);
+
+  // Reinitialize constraints
+  m_constraints.clear(); // Clear the existing constraints
+
+  // Distance Constraints for all Triangles
+  double distanceCompliance = 10000; // 1e-9;
+  for (Eigen::Index i = 0; i < F.rows(); i++) {
+    auto *c0 = new DistanceConstraint(distanceCompliance, m_positions, F(i, 0),
+                                      F(i, 1));
+    auto *c1 = new DistanceConstraint(distanceCompliance, m_positions, F(i, 0),
+                                      F(i, 2));
+    auto *c2 = new DistanceConstraint(distanceCompliance, m_positions, F(i, 1),
+                                      F(i, 2));
+
+    m_constraints.push_back(c0);
+    m_constraints.push_back(c1);
+    m_constraints.push_back(c2);
+  }
+
+  // Volume constraint
+  double volumeCompliance = 0.1;
+  double pressure = 1;
+  for (size_t i = 0; i < dynamicObjs.size(); i++) {
+    Eigen::Index start, length;
+    std::tie(start, length) = m_indices[i];
+    std::cout << start << std::endl;
+    auto *cV = new ShellVolumeConstraint(volumeCompliance, m_positions, F,
+                                         start, length, pressure);
+    m_constraints.push_back(cV);
+  }
+
+  std::cout << "Simulation has been reset to its initial state." << std::endl;
+}
+
+void SimulationModel::exportMesh() {
+  // get the current dynamic objects
+  auto &dynamicObjects = this->getDynamics();
+  Mesh dynamicMeshs = dynamicObjects[0];
+  // get Vertices and faces of mesh
+  Eigen::MatrixX3d V_export = dynamicMeshs.getVertices();
+  Eigen::MatrixX3i F_export = dynamicMeshs.getFaces();
+
+  // @todo: implement an export Mesh that handles more than one object using a
+  // loop
+  // @todo: check that implementation is correct
+  // @todo: check if static objects also have to be exported
+  // int index_V = 0;
+  // int index_F = 0;
+  // for (Mesh m : dynamicObjects) {
+  //   // get current Vertices and Faces
+  //   Eigen::MatrixX3d m_V = m.getVertices();
+  //   Eigen::MatrixX3i m_F = m.getFaces();
+
+  //   // add Vertices and Faces to the Matrix
+  //   const Eigen::Index num_rows_V = m.numVertices();
+  //   V_export.middleRows(num_rows_V, index_V) = m_V;
+
+  //   const Eigen::Index num_rows_F = m.numFaces();
+  //   F_export.middleRows(num_rows_F, index_F) = m_F;
+
+  //   // update index
+  //   index_V += num_rows_V;
+  //   index_F += num_rows_F;
+  // }
+  // auto &staticObjects = this->getStatics();
+  // for (Mesh m : staticObjects) {
+  //   Eigen::MatrixX3d m_V = m.getVertices();
+  //   Eigen::MatrixX3i m_F = m.getFaces();
+
+  //   // add Vertices and Faces to the Matrix
+  //   const Eigen::Index num_rows_V = m.numVertices();
+  //   V_export.middleRows(num_rows_V, index_V) = m_V;
+
+  //   const Eigen::Index num_rows_F = m.numFaces();
+  //   F_export.middleRows(num_rows_F, index_F) = m_F;
+
+  //   //update index
+  //   index_V += num_rows_V;
+  //   index_F += num_rows_F;
+  // }
+
+  // export to output file
+  igl::writeOBJ("output.obj", V_export, F_export);
+
+  std::cout << "export object as obj file \n";
+}
+
 void SimulationModel::update(double deltaTime) {
   // Update simulation state using positional-based dynamics or other
   // physics Implementation follows Algorithm 1 in the XPBD paper:
@@ -226,6 +449,7 @@ void SimulationModel::update(double deltaTime) {
     // plane collision constraint
     double penetrationDepth = floorNormal.dot(x.row(i).transpose());
     if (penetrationDepth < 0) {
+
       auto *c0 = new StaticPlaneCollisionConstraint(collisionCompliance,
                                                     floorNormal, 0.0, i);
       auto *c1 = new PlaneFrictionConstraint(frictionCompliance, floorNormal,
@@ -254,6 +478,11 @@ void SimulationModel::update(double deltaTime) {
         c = m_constraints[i];
       } else {
         c = collConstraints[i - m_constraints.size()];
+      }
+
+      // if the constraint is not enabled, skip the update step
+      if (!c->getIsActive()) {
+        continue;
       }
 
       Eigen::VectorXd Minv = m_massInv(c->getIndices());
@@ -293,3 +522,5 @@ void SimulationModel::update(double deltaTime) {
 std::vector<Mesh> &SimulationModel::getStatics() { return staticObjs; }
 
 std::vector<Mesh> &SimulationModel::getDynamics() { return dynamicObjs; }
+
+std::mutex *SimulationModel::getLock() { return &modelLock; }

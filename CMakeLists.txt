@@ -10,6 +10,7 @@ include(libigl)
 # Enable the target igl::glfw
 igl_include(glfw)
 igl_include(imgui)
+igl_include(copyleft tetgen)
 
 # Add source files
 add_executable(PBS-soft-body
@@ -41,4 +42,5 @@ target_link_libraries(
   PBS-soft-body
   igl::glfw
   igl::imgui
+  igl_copyleft::tetgen
 )

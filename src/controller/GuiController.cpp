@@ -3,6 +3,7 @@
  * @brief Defintions of GuiController
  */
 #include "GuiController.h"
+#include "../model/Constraint.h"
 #include "SimulationController.h"
 
 GuiController::GuiController(SimulationController *controller,
@@ -28,6 +29,11 @@ GuiController::GuiController(SimulationController *controller,
 
     bool _viewer_menu_visible = true;
 
+    ImGuiIO &io = ImGui::GetIO();
+    (void)io;
+    io.ConfigFlags |=
+        ImGuiConfigFlags_NavEnableKeyboard; // Enable Keyboard Controls
+
     ImGui::Begin("Viewer", &_viewer_menu_visible,
                  ImGuiWindowFlags_NoSavedSettings);
 
@@ -43,21 +49,30 @@ void GuiController::drawMenu(igl::opengl::glfw::Viewer &viewer,
 
   // get Simulation parameter values
   int timeStep = this->controller->getTimeStep();
-  float compliance = this->controller->getCompliance();
+  float complianceDistance = this->controller->getComplianceDistance();
+  float complianceStaticPlane = this->controller->getComplianceStaticPlane();
+  float compliancePlaneFriction =
+      this->controller->getCompliancePlaneFriction();
+  float complianceVolume = this->controller->getComplianceVolume();
   float pressure = this->controller->getPressure();
 
   bool running = this->controller->getIsSimulationRunning();
+
+  static bool activeVolume = true;
+  static bool activeDistance = true;
+  static bool activeStaticPlane = true;
+  static bool activeFriction = true;
 
   if (ImGui::CollapsingHeader("Simulation settings",
                               ImGuiTreeNodeFlags_DefaultOpen)) {
 
     if (ImGui::Button("Single step", ImVec2(button_width, 0))) {
-      std::cout << "not implemented yet \n";
+      std::cout << "executing single time step \n";
       this->controller->singleStep();
     }
 
     if (ImGui::Button("Reset Simulation", ImVec2(button_width, 0))) {
-      std::cout << "not implemented yet \n";
+      std::cout << "simulation is reset";
       this->controller->resetSimulation();
     }
 
@@ -68,22 +83,92 @@ void GuiController::drawMenu(igl::opengl::glfw::Viewer &viewer,
         this->controller->startSimulation();
       }
     }
+
+    if (ImGui::Button("Export Object", ImVec2(button_width, 0))) {
+      this->controller->exportObj();
+    }
   }
   if (ImGui::CollapsingHeader("Soft body parameters",
                               ImGuiTreeNodeFlags_DefaultOpen)) {
-    if (ImGui::InputInt("Time step", &timeStep)) {
+
+    if (ImGui::SliderInt("Time step", &timeStep, 20, 100)) {
       std::cout << "current selected time step size is " << timeStep << "\n";
       this->controller->setTimeStep(timeStep);
     }
 
-    if (ImGui::SliderFloat("inverse stiffness", &compliance, 0.0f, 1.0f)) {
-      std::cout << "current selected stiffness value is " << compliance << "\n";
-      this->controller->setCompliance(compliance);
+    if (ImGui::CollapsingHeader("Distance constraint",
+                                ImGuiTreeNodeFlags_DefaultOpen)) {
+
+      if (ImGui::Checkbox("Distance active", &activeDistance)) {
+
+        std::cout << "Is Distance active: " << std::boolalpha << activeDistance
+                  << std::endl;
+        this->controller->setState(activeDistance, EDistance);
+      }
+      if (ImGui::SliderFloat("distance compliance", &complianceDistance, 0.0f,
+                             10000.0f)) {
+        std::cout
+            << "current selected compliance value for distance constraint is "
+            << complianceDistance << "\n";
+        this->controller->setComplianceDistance(complianceDistance);
+      }
     }
 
-    if (ImGui::SliderFloat("pressure", &pressure, 0.0f, 10.0f)) {
-      std::cout << "current selected pressure value is " << pressure << "\n";
-      this->controller->setPressure(pressure);
+    if (ImGui::CollapsingHeader("StaticPlaneCollision constraint",
+                                ImGuiTreeNodeFlags_DefaultOpen)) {
+
+      if (ImGui::Checkbox("Static Plane collision active",
+                          &activeStaticPlane)) {
+
+        std::cout << "Is StaticPlaneCollision active: " << std::boolalpha
+                  << activeStaticPlane << std::endl;
+        this->controller->setState(activeStaticPlane, EStaticPlaneCollision);
+      }
+
+      if (ImGui::SliderFloat("static compliance", &complianceStaticPlane, 0.0f,
+                             1.0f)) {
+        std::cout << "current selected compliance value for plane collision is "
+                  << complianceStaticPlane << "\n";
+        this->controller->setComplianceStaticPlane(complianceStaticPlane);
+      }
+    }
+
+    if (ImGui::CollapsingHeader("PlaneFriction constraint",
+                                ImGuiTreeNodeFlags_DefaultOpen)) {
+      if (ImGui::Checkbox("Friction active", &activeFriction)) {
+        std::cout << "Is Friction active: " << std::boolalpha << activeFriction
+                  << std::endl;
+        this->controller->setState(activeFriction, EPlaneFriction);
+      }
+
+      if (ImGui::SliderFloat("Plane friction compliance",
+                             &compliancePlaneFriction, 0.0f, 1.0f)) {
+        std::cout << "current selected compliance value for plane friction is "
+                  << compliancePlaneFriction << "\n";
+        this->controller->setCompliancePlaneFriction(compliancePlaneFriction);
+      }
+    }
+
+    if (ImGui::CollapsingHeader("Volume constraint",
+                                ImGuiTreeNodeFlags_DefaultOpen)) {
+      if (ImGui::Checkbox("Volume active", &activeVolume)) {
+
+        std::cout << "Is Volume active: " << std::boolalpha << activeVolume
+                  << std::endl;
+        this->controller->setState(activeVolume, ETetVolume);
+      }
+
+      if (ImGui::SliderFloat("Volume compliance", &complianceVolume, 0.0f,
+                             1.0f)) {
+        std::cout << "current selected compliance value for volume is "
+                  << complianceVolume << "\n";
+        this->controller->setComplianceVolume(complianceVolume);
+      }
+
+      if (ImGui::SliderFloat("pressure", &pressure, 0.0f, 10.0f)) {
+        std::cout << "current selected pressure value is " << pressure << "\n";
+        this->controller->setPressure(pressure);
+      }
     }
   }
 }

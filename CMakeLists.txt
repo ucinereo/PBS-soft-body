@@ -10,6 +10,7 @@ include(libigl)
 # Enable the target igl::glfw
 igl_include(glfw)
 igl_include(imgui)
+igl_include(copyleft tetgen)
 
 # Add source files
 add_executable(PBS-soft-body
@@ -22,6 +23,7 @@ add_executable(PBS-soft-body
   src/model/SimulationModel.cpp
   src/model/Mesh.h
   src/model/Mesh.cpp
+  src/model/Constraint.h
   src/view/RendereableMesh.h
   src/view/Renderer.h
   src/view/Renderer.cpp
@@ -40,4 +42,5 @@ target_link_libraries(
   PBS-soft-body
   igl::glfw
   igl::imgui
+  igl_copyleft::tetgen
 )

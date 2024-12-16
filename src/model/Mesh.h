@@ -24,6 +24,16 @@ public:
   Mesh(Eigen::MatrixX3d V, Eigen::MatrixX3i F);
 
   /**
+   * @brief Create a new mesh.
+   * @param V Vertices matrix of shape (N x 3)
+   * @param F Faces matrix of shape (N x 3), note that the sequence per triangle
+   * is important, as (1, 2, 3) and (3, 2, 1) are the same triangle, but with
+   * inverted normals!
+   * @param TT Indices of tetrahedron if the mesh is a tet-mesh. Shape (N x 4)
+   */
+  Mesh(Eigen::MatrixX3d V, Eigen::MatrixX3i F, Eigen::MatrixXi TT);
+
+  /**
    * @brief Get the number of vertices.
    * @return const Eigen::Index number of vertices
    */
@@ -40,6 +50,24 @@ public:
    * @return const Eigen::MatrixXi non-modifiable face matrix
    */
   const Eigen::MatrixX3i getFaces() const;
+
+  /**
+   * @brief Get the tetrahedra inices (matrix of shape (n x 4))
+   * @return Tet index matrix
+   */
+  const Eigen::MatrixXi getTetIndices() const;
+
+  /**
+   * @brief Get the Initial Positions matrix
+   * @return const Eigen::MatrixX3i
+   */
+  const Eigen::MatrixX3d getInitialPositions() const;
+
+  /**
+   * @brief Get the number of faces.
+   * @return const Eigen::Index number of faces
+   */
+  const Eigen::Index numFaces() const;
 
   /**
    * @brief Update the vertex positions of the vertices
@@ -78,8 +106,10 @@ public:
 private:
   // @TODO: Currently stores the vertex positions directly, might be smart to
   // add an origin position just like in the PBS example projects.
-  Eigen::MatrixX3d V; ///< Vertex matrix of shape (N x 3)
-  Eigen::MatrixX3i F; ///< Face matrix of shape (N x 3)
+  Eigen::MatrixX3d V;      ///< Vertex matrix of shape (N x 3)
+  Eigen::MatrixX3d V_init; ///< Initial Vertex Positions
+  Eigen::MatrixX3i F;      ///< Face matrix of shape (N x 3)
+  Eigen::MatrixXi TT;      ///< Tet-mesh matrix of shape (N x 4)
   // @TODO: Update single color vector with color matrix (see libigl)
   Eigen::RowVector3d color =
       Eigen::RowVector3d(0.2f, 0.2f, 0.2f); ///< Mesh color

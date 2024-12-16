@@ -8,6 +8,7 @@
 #include "Constraint.h"
 #include "Mesh.h"
 #include <Eigen/Core>
+#include <mutex>
 #include <vector>
 
 /**
@@ -29,6 +30,84 @@ public:
    * calls initialize() to initialize the scene.
    */
   SimulationModel();
+
+  /**
+   * @brief get the compliance value of the distance constraint
+   */
+  double getComplianceEDistance();
+
+  /**
+   * @brief set the new compliance value to each distance constraint
+   * @param compliance new value of distance constraint
+   */
+  void setComplianceEDistance(double compliance);
+
+  /**
+   * @brief get the compliance value of the Static Plane Collision
+   */
+  double getComplianceEStaticPlaneCollision();
+
+  /**
+   * @brief set the new compliance value to each static plane collision constraint
+   * @param compliance new value of plane collision constraint
+   */
+  void setComplianceEstaticPlaneCollision(double compliance);
+
+  /**
+   * @brief get the compliance value of the plane friction
+   */
+  double getComplianceEPlaneFriction();
+
+  /**
+   * @brief set the new compliance value to each plane friction constraint
+   * @param compliance new value of plane friction constraint
+   */
+  void setComplianceEPlaneFriction(double compliance);
+
+  /**
+   * @brief get the compliance value of the volume constraint
+   */
+  double getComplianceVolume();
+
+  /**
+   * @brief set the new compliance value to each volume constraint
+   * @param compliance new value of volume constraint
+   */
+  void setComplianceVolume(double compliance);
+
+
+/**
+ * @brief get the pressure value
+ */
+double getPressureValue();
+
+/**
+ * @brief set the pressure value to the new pressure
+ * @param pressure new value of pressure
+ */
+void setPressureValue(double pressure);
+
+/**
+ * @brief set the constraint to active/inactive
+ */
+void setState(EConstraintType type, bool state);
+
+
+  /**
+   * @brief Get the mutex lock of the render thread
+   * @return std::mutex Render lock
+   */
+  std::mutex *getLock();
+
+  /**
+   * @brief reset all the object models and time to the initial position
+   */
+  void reset();
+
+  /**
+   * @brief exports the object mesh
+   */
+  void exportMesh();
 
   /**
    * @brief Update the physical model state according to the given timestep.
@@ -65,6 +144,11 @@ private:
   //                            std::vector<Constraint *> &collConstraints)
   //                            const;
 
+  std::mutex modelLock; ///< Lock which is necessary to avoid race condition
+
+  Eigen::MatrixX3d V;
+  Eigen::MatrixX3i F;
+
   std::vector<Mesh> staticObjs;  ///< Storage of static scene objects
   std::vector<Mesh> dynamicObjs; ///< Storage of dynamic scene objects
   std::vector<double> m_slacks;
@@ -77,6 +161,8 @@ private:
   Eigen::MatrixX3d m_positions;  /// (N x 3)
   Eigen::MatrixX3d m_velocities; /// (N x 3)
   std::vector<Constraint *> m_constraints;
+
+  Eigen::MatrixX3d m_initialpositions;
 
   /// External Forces (just gravity for now)
   Eigen::MatrixX3d m_gravity; /// (N x 3)

@@ -9,11 +9,22 @@
 
 Mesh::Mesh(Eigen::MatrixX3d V, Eigen::MatrixX3i F) : V(V), F(F) {}
 
+Mesh::Mesh(Eigen::MatrixX3d V, Eigen::MatrixX3i F, Eigen::MatrixXi TT)
+    : V(V), F(F), TT(TT) {
+  V_init = V;
+}
+
 const Eigen::Index Mesh::numVertices() const { return V.rows(); }
 
 const Eigen::MatrixX3d Mesh::getVertices() const { return V; }
 
 const Eigen::MatrixX3i Mesh::getFaces() const { return F; }
+
+const Eigen::MatrixXi Mesh::getTetIndices() const { return TT; };
+
+const Eigen::MatrixX3d Mesh::getInitialPositions() const { return V_init; }
+
+const Eigen::Index Mesh::numFaces() const { return F.rows(); }
 
 void Mesh::updateVertices(Eigen::MatrixX3d v) {
   // @TODO: Maybe add some validation here to ensure that the shapes are the

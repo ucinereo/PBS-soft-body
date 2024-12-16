@@ -12,7 +12,8 @@ enum EConstraintType {
   EDistance,
   EStaticPlaneCollision,
   EPlaneFriction,
-  EShellVolume
+  EShellVolume,
+  ETetVolume,
 };
 
 /// Update strategies for the solver, defines what values should be used in the
@@ -109,6 +110,7 @@ protected:
   std::vector<Eigen::Index> m_indices; /// Indices of the relevant vertices
   double
       m_compliance; /// Constraint compliance, corresponds to inverse stiffness
+  bool isActive = true; /// Status of the constraint: is it enabled or not
 
 public:
   /**
@@ -136,6 +138,17 @@ public:
    * @brief Set the compliance value
    */
   void setCompliance(double compliance) { m_compliance = compliance; }
+
+  /**
+   * @brief get the current is_active status
+   * @return is_active value
+   */
+  bool getIsActive() const { return isActive; }
+
+  /**
+   * @brief Set the isActive status
+   */
+  void setIsActive(bool active) { isActive = active; }
 
   /**
    * @brief Get the constraint alpha
@@ -279,7 +292,7 @@ public:
                         Eigen::Index length, double pressure);
 
   /**
-   * @brief Evaluate the volume constraint. The value is computed as @TODO
+   * @brief Evaluate the volume constraint.
    * @param cRec A Constraint Query Record
    */
   void solve(ConstraintQueryRecord &cRec) const override;
@@ -293,8 +306,62 @@ public:
 
   EConstraintType getType() const override { return EShellVolume; }
 
+  /**
+   * @brief get the current pressure value
+   * @return the current pressure value
+   */
+  double getPressure() const { return m_pressure; }
+
+  /**
+   * @brief update the pressure value
+   * @param pressure the new vlaue the pressure gets updated to
+   */
+  void setPressure(double pressure) { m_pressure = pressure; }
+
 private:
   Eigen::MatrixX3i m_triangles; /// Vertex indices of the triangles
   double m_init_volume; /// Initial volume, the constraint will try to match
   double m_pressure;    /// Pressure factor in front of the initial volume
+};
+
+/**
+ * @class TetVolumeConstraint
+ * @brief Constraint to enforce volume preservation for tet-meshes
+ */
+class TetVolumeConstraint : public Constraint {
+public:
+  TetVolumeConstraint(double compliance, Eigen::MatrixX3d &x0, double pressure,
+                      Eigen::Index p0, Eigen::Index p1, Eigen::Index p2,
+                      Eigen::Index p3);
+
+  /**
+   * @brief Evaluate the volume constraint. The value is computed as @TODO
+   * @param cRec A Constraint Query Record
+   */
+  void solve(ConstraintQueryRecord &cRec) const override;
+
+  /**
+   * @brief Calcualte the volume of a tet
+   * @param x Vertex positions
+   * @return double, the volume of the mesh
+   */
+  double calculateVolume(const Eigen::MatrixX3d &x) const;
+
+  EConstraintType getType() const override { return ETetVolume; }
+
+  /**
+   * @brief get the current pressure value
+   * @return the current pressure value
+   */
+  double getPressure() const { return m_pressure; }
+
+  /**
+   * @brief update the pressure value
+   * @param pressure the new vlaue the pressure gets updated to
+   */
+  void setPressure(double pressure) { m_pressure = pressure; }
+
+private:
+  double m_init_volume;    ///< Initial volume of each tet
+  double m_pressure = 1.f; ///< pressure of the tets
 };

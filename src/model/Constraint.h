@@ -238,10 +238,11 @@ public:
    * @param index1 Index of the vertex
    */
   PlaneFrictionConstraint(double compliance, Eigen::Vector3d &normal,
-                          double staticMu, double kineticMu,
-                          Eigen::Index index1)
+                          double penetrationDepth, double staticMu,
+                          double kineticMu, Eigen::Index index1)
       : Constraint(compliance, {index1}), m_normal(normal),
-        m_staticMu(staticMu), m_kineticMu(kineticMu) {}
+        m_penetrationDepth(penetrationDepth), m_staticMu(staticMu),
+        m_kineticMu(kineticMu) {}
 
   /**
    * @brief Solve the Plane Friction Constraint.

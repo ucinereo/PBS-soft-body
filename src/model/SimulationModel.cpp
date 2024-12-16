@@ -6,6 +6,7 @@
 #include "SimulationModel.h"
 #include "../utils.h"
 #include <Eigen/Core>
+#include <Eigen/Geometry>
 #include <igl/readOBJ.h>
 #include <igl/readOFF.h>
 #include <igl/upsample.h>
@@ -16,7 +17,7 @@ SimulationModel::SimulationModel() { initialize(); }
 void SimulationModel::initialize() {
   // @TODO: Update this initialization with a scene parsing or something
 
-  int number_of_subdivisions = 0;
+  int number_of_subdivisions = 3;
 
   // Simple Rotation
   auto Rx = Eigen::AngleAxisd(M_PI / 3, Eigen::Vector3d::UnitX());
@@ -24,7 +25,7 @@ void SimulationModel::initialize() {
   auto Rz = Eigen::AngleAxisd(M_PI / 3, Eigen::Vector3d::UnitZ());
 
   // Initialize Cube 1
-  auto T1 = Eigen::Translation3d(Eigen::Vector3d(3, 5, 0));
+  auto T1 = Eigen::Translation3d(Eigen::Vector3d(5, 10, 0));
   auto R1 = Rx * Ry * Rz;
   auto S1 = Eigen::Scaling(Eigen::Vector3d(1, 1, 1));
   Eigen::Affine3d M1 = T1 * R1 * S1;
@@ -37,17 +38,18 @@ void SimulationModel::initialize() {
   dynamicObjs.push_back(cube1);
 
   // Initialize Cube 2
-  auto T2 = Eigen::Translation3d(Eigen::Vector3d(-3, 5, 0));
-  auto R2 = Rx * Ry;
-  auto S2 = Eigen::Scaling(Eigen::Vector3d(1, 1, 1));
+  auto T2 = Eigen::Translation3d(Eigen::Vector3d(-5, 5, 0));
+  auto R2 = Rz * Rx * Ry;
+  auto S2 = Eigen::Scaling(Eigen::Vector3d(1, 3, 3));
   Eigen::Affine3d M2 = T2 * R2 * S2;
 
   Eigen::MatrixX3d cube2V;
   Eigen::MatrixX3i cube2F;
-  createCube(cube2V, cube2F, M2, number_of_subdivisions);
+  createCube(cube2V, cube2F, M2, 0);
   Mesh cube2(cube2V, cube2F);
   cube2.updateColor(0.8f, 0.4431372f, 0.180392f);
-  dynamicObjs.push_back(cube2);
+  staticObjs.push_back(cube2);
+  m_slacks.push_back(1e-1);
 
   // Initialize a basic floor mesh as static
   Eigen::MatrixX3d floorV;
@@ -56,6 +58,7 @@ void SimulationModel::initialize() {
   Mesh floor = Mesh(floorV, floorF);
   floor.updateColor(0.4, 0.4, 0.4);
   staticObjs.push_back(floor);
+  m_slacks.push_back(std::numeric_limits<double>::infinity());
 
   // Compute indices in the per vertex state matrices for each object
   Eigen::Index totalNumVertices = 0;
@@ -77,6 +80,12 @@ void SimulationModel::initialize() {
   // Initialize velocity state matrix with zeros
   m_velocities = Eigen::MatrixX3d::Zero(m_positions.rows(), m_positions.cols());
 
+  // Set a few example velocities for some action
+  m_velocities.middleRows(m_indices[0].first, m_indices[0].second).col(0) =
+      Eigen::RowVectorXd::Constant(m_indices[0].second, -1e-2);
+  //  m_velocities.middleRows(m_indices[1].first, m_indices[1].second).col(0) =
+  //      Eigen::RowVectorXd::Constant(m_indices[1].second, 1e-2);
+
   // Diagonal of the mass matrix, currently 1 for all vertices
   m_mass = Eigen::VectorXd::Ones(m_positions.rows());
   m_massInv = m_mass.cwiseInverse();
@@ -87,7 +96,7 @@ void SimulationModel::initialize() {
                                         .replicate(m_positions.rows(), 1);
 
   //   Distance Constraints for all Triangles
-  double distanceCompliance = 1; // 1e-9;
+  double distanceCompliance = 2000; // 1e-9;
   for (size_t i = 0; i < dynamicObjs.size(); i++) {
     const Mesh &obj = dynamicObjs[i];
     Eigen::MatrixX3d V = obj.getVertices();
@@ -126,32 +135,72 @@ void SimulationModel::initialize() {
 }
 
 void SimulationModel::getStaticCollConstraints(
-    const Eigen::MatrixX3d &x,
+    const Eigen::MatrixX3d &Xp, const Eigen::MatrixX3d &X,
     std::vector<Constraint *> &collConstraints) const {
-  Eigen::Vector3d floorNormal(0, 1, 0);
-  double staticMu = 0.9;
-  double kineticMu = 0.9;
+  //  Eigen::Vector3d floorNormal(0, 1, 0);
+  //  double staticMu = 0.9;
+  //  double kineticMu = 0.9;
+  //  double collisionCompliance = 1e-9;
+  //  double frictionCompliance = 1e-9;
+  //  for (Eigen::Index i = 0; i < X.rows(); i++) {
+  //    // Check if the vertex is penetrating the floor, and if so add a static
+  //    // plane collision constraint
+  //    double penetrationDepth = floorNormal.dot(X.row(i).transpose());
+  //    if (penetrationDepth < 0) {
+  //      auto *c0 = new StaticPlaneCollisionConstraint(collisionCompliance,
+  //                                                    floorNormal, 0.0, i);
+  //      auto *c1 = new PlaneFrictionConstraint(frictionCompliance,
+  //      floorNormal,
+  //                                             staticMu, kineticMu, i);
+  //
+  //      collConstraints.push_back(c0);
+  //      collConstraints.push_back(c1);
+  //    }
+  //  }
+
+  double staticMu = 0.000001; // 0.00002;
+  double kineticMu = 0.00001;
   double collisionCompliance = 1e-9;
   double frictionCompliance = 1e-9;
-  for (Eigen::Index i = 0; i < x.rows(); i++) {
-    // Check if the vertex is penetrating the floor, and if so add a static
-    // plane collision constraint
-    double penetrationDepth = floorNormal.dot(x.row(i).transpose());
-    if (penetrationDepth < 0) {
-      auto *c0 = new StaticPlaneCollisionConstraint(collisionCompliance,
-                                                    floorNormal, 0.0, i);
-      auto *c1 = new PlaneFrictionConstraint(frictionCompliance, floorNormal,
-                                             staticMu, kineticMu, i);
 
-      collConstraints.push_back(c0);
-      collConstraints.push_back(c1);
+  for (size_t i = 0; i < dynamicObjs.size(); i++) {
+    Eigen::Index s, l;
+    std::tie(s, l) = m_indices[i];
+
+    for (size_t j = 0; j < staticObjs.size(); j++) {
+      const Mesh &obj = staticObjs[j];
+      const Eigen::MatrixX3d V = obj.getVertices();
+      const Eigen::MatrixX3i F = obj.getFaces();
+
+      for (Eigen::Index qi = s; qi < s + l; qi++) {
+        Eigen::Vector3d qp = Xp.row(qi).transpose();
+        Eigen::Vector3d q = X.row(qi).transpose();
+
+        for (Eigen::Index fi = 0; fi < F.rows(); fi++) {
+          Eigen::Vector3d x1 = V.row(F(fi, 0)).transpose();
+          Eigen::Vector3d x2 = V.row(F(fi, 1)).transpose();
+          Eigen::Vector3d x3 = V.row(F(fi, 2)).transpose();
+
+          Eigen::Vector3d n = (x2 - x1).cross(x3 - x1).normalized();
+          double restDistance = n.dot(x1);
+          double penetrationDepth;
+
+          if (vertexIntersectsTriangle(qp, q, x1, x2, x3, m_slacks[j],
+                                       penetrationDepth)) {
+            auto *c0 = new StaticPlaneCollisionConstraint(collisionCompliance,
+                                                          n, restDistance, qi);
+            auto *c1 = new PlaneFrictionConstraint(frictionCompliance, n,
+                                                   penetrationDepth, staticMu,
+                                                   kineticMu, qi);
+
+            collConstraints.push_back(c0);
+            collConstraints.push_back(c1);
+          }
+        }
+      }
     }
   }
 }
-
-void SimulationModel::getDynamicCollConstraints(
-    const Eigen::MatrixX3d &x,
-    std::vector<Constraint *> &collConstraints) const {}
 
 void SimulationModel::update(double deltaTime) {
   // Update simulation state using positional-based dynamics or other physics
@@ -180,8 +229,8 @@ void SimulationModel::update(double deltaTime) {
   // Collect collision constraints (dynamically, will require more logic once we
   // do collisions between different objects)
   std::vector<Constraint *> collConstraints;
-  this->getStaticCollConstraints(x, collConstraints);
-  this->getDynamicCollConstraints(x, collConstraints);
+  this->getStaticCollConstraints(m_positions, x, collConstraints);
+  //  this->getDynamicCollConstraints(m_positions, x, collConstraints);
 
   std::vector<size_t> indices(m_constraints.size() + collConstraints.size());
   std::iota(indices.begin(), indices.end(), 0);

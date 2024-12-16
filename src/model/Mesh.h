@@ -116,23 +116,16 @@ public:
    */
   void setID(size_t ID) { m_ID = ID; };
 
-  static Mesh createCube(Eigen::Affine3d &toWorld) {
-    Eigen::MatrixX3d V;
-    Eigen::MatrixX3i F;
+  /**
+   * @brief Create a floor mesh, consisting of two triangles, which spans the
+   * coordinates
+   * (-100, -100) to (100, 100)
+   */
+  static Mesh createFloor();
 
-    igl::readOBJ("../assets/cube_1x.obj", V, F);
+  static Mesh createCube(Eigen::Affine3d &toWorld);
 
-    return Mesh(V, F, toWorld);
-  }
-
-  static Mesh createDuck(Eigen::Affine3d &toWorld) {
-    Eigen::MatrixX3d V;
-    Eigen::MatrixX3i F;
-
-    igl::readOBJ("../assets/rubber_duck.obj", V, F);
-
-    return Mesh(V, F, toWorld);
-  }
+  static Mesh createDuck(Eigen::Affine3d &toWorld);
 
 private:
   // @TODO: Currently stores the vertex positions directly, might be smart to

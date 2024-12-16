@@ -6,6 +6,7 @@
 #pragma once
 #include "../view/RendereableMesh.h"
 #include "Constraint.h"
+#include "ConstraintFactory.h"
 #include "Mesh.h"
 #include <Eigen/Core>
 #include <mutex>
@@ -89,7 +90,7 @@ public:
    * @brief Get the mutex lock of the render thread
    * @return std::mutex Render lock
    */
-  std::mutex *getLock() { return &modelLock; }
+  std::mutex *getLock() { return &m_modelLock; }
 
   /**
    * @brief reset all the object models and time to the initial position
@@ -111,12 +112,12 @@ public:
    * @brief Get references to all static objects of the model
    * @return std::vector<Mesh>& References of static objects
    */
-  std::vector<Mesh> &getStatics() { return staticObjs; }
+  std::vector<Mesh> &getStatics() { return m_staticObjs; }
   /**
    * @brief Get references to all dynamic objects of the model
    * @return std::vector<Mesh>& References of dynamic objects
    */
-  std::vector<Mesh> &getDynamics() { return dynamicObjs; }
+  std::vector<Mesh> &getDynamics() { return m_dynamicObjs; }
 
 private:
   /**
@@ -136,10 +137,10 @@ private:
   //                            std::vector<Constraint *> &collConstraints)
   //                            const;
 
-  std::mutex modelLock; ///< Lock which is necessary to avoid race condition
+  std::mutex m_modelLock; ///< Lock which is necessary to avoid race condition
 
-  std::vector<Mesh> staticObjs;  ///< Storage of static scene objects
-  std::vector<Mesh> dynamicObjs; ///< Storage of dynamic scene objects
+  std::vector<Mesh> m_staticObjs;  ///< Storage of static scene objects
+  std::vector<Mesh> m_dynamicObjs; ///< Storage of dynamic scene objects
   std::vector<double> m_slacks;
   double m_staticMu = 0.000001;
   double m_kineticMu = 0.00001;

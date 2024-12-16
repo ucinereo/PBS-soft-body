@@ -39,64 +39,31 @@ public:
   void setTimeStep(int timeStep);
 
   /**
-   * @brief Getter for compliance value of static plane constraint
-   * @return Current compliance value of static plane constraint
+   * @brief get the compliance value of some constraint type
    */
-  double getComplianceStaticPlane();
+  double getCompliance(EConstraintType cType) const {
+    return model.getCompliance(cType);
+  }
 
   /**
-   * @brief Set compliance parameter of static plane constraint
-   * @param complianceStaticPlane compliance value it gets updated to
+   * @brief set the new compliance value to each constraint of some type
+   * @param compliance new value of the constraint compliance
    */
-  void setComplianceStaticPlane(double complianceStaticPlane);
-
-  /**
-   * @brief Getter for compliance value of distance constraint
-   * @return Current compliance value of distance constraint
-   */
-  double getComplianceDistance();
-
-  /**
-   * @brief Set compliance parameter of distance constraint
-   * @param complianceDistance compliance value it gets updated to
-   */
-  void setComplianceDistance(double complianceDistance);
-
-  /**
-   * @brief Getter for compliance value of plane friction constraint
-   * @return Current compliance value of plane friction constraint
-   */
-  double getCompliancePlaneFriction();
-
-  /**
-   * @brief Set compliance parameter of plane friction constraint
-   * @param compliancePlaneFriction compliance value it gets updated to
-   */
-  void setCompliancePlaneFriction(double compliancePlaneFriction);
-
-  /**
-   * @brief Getter for compliance value of volume constraint
-   * @return current compliance value of volume constraint
-   */
-  double getComplianceVolume();
-
-  /**
-   * @brief Set compliance parameter of volume constraint
-   * @param complianceVolume compliance value it gets updated to
-   */
-  void setComplianceVolume(double complianceVolume);
+  void setCompliance(EConstraintType cType, double compliance) {
+    model.setCompliance(cType, compliance);
+  }
 
   /**
    * @brief Getter for pressure value
    * @return Current pressure value
    */
-  float getPressure();
+  double getPressure();
 
   /**
    * @brief Set pressure value
    * @param pressure pressure value it gets updated to
    */
-  void setPressure(float pressure);
+  void setPressure(double pressure);
 
   /**
    * @brief Getter for friction value
@@ -108,7 +75,7 @@ public:
    * @brief Set friction value
    * @param friction friction value it gets updated to
    */
-  void setFriction(float friction);
+  void setFriction(double friction);
 
   /**
    * @brief executes a single step of the simulation
@@ -164,8 +131,8 @@ private:
 
   std::thread *simulationThread; ///< Independent physical update thread
 
-  int timeStep = 24;     ///< initial time step value of the simulation
-  float friction = 0.0f; ///< initial friction value
+  int timeStep = 24;      ///< initial time step value of the simulation
+  double friction = 0.0f; ///< initial friction value
 
   bool isSimulationRunning =
       false; ///< says if the simulation is running or not

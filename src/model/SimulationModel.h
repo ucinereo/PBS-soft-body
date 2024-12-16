@@ -32,72 +32,64 @@ public:
   SimulationModel();
 
   /**
-   * @brief get the compliance value of the distance constraint
+   * @brief get the compliance value of some constraint type
    */
-  double getComplianceEDistance();
+  double getCompliance(EConstraintType cType) const {
+    for (Constraint *c : m_constraints) {
+      if (c->getType() == cType)
+        return c->getCompliance();
+    }
+    return 0;
+  }
 
   /**
-   * @brief set the new compliance value to each distance constraint
-   * @param compliance new value of distance constraint
+   * @brief set the new compliance value to each constraint of some type
+   * @param compliance new value of the constraint compliance
    */
-  void setComplianceEDistance(double compliance);
+  void setCompliance(EConstraintType cType, double compliance) {
+    for (Constraint *c : m_constraints) {
+      if (c->getType() == cType)
+        c->setCompliance(std::max(compliance, 1e-9)); // Avoid division by zero
+    }
+  }
 
   /**
-   * @brief get the compliance value of the Static Plane Collision
+   * @brief get the pressure value
    */
-  double getComplianceEStaticPlaneCollision();
+  double getPressureValue() {
+    for (Constraint *c : m_constraints) {
+      if (c->getType() == ETetVolume)
+        return ((TetVolumeConstraint *)c)->getPressure();
+    }
+    return 0;
+  };
 
   /**
-   * @brief set the new compliance value to each static plane collision constraint
-   * @param compliance new value of plane collision constraint
+   * @brief set the pressure value to the new pressure
+   * @param pressure new value of pressure
    */
-  void setComplianceEstaticPlaneCollision(double compliance);
+  void setPressureValue(double pressure) {
+    for (Constraint *c : m_constraints) {
+      if (c->getType() == ETetVolume)
+        ((TetVolumeConstraint *)c)->setPressure(pressure);
+    }
+  }
 
   /**
-   * @brief get the compliance value of the plane friction
+   * @brief set the constraint to active/inactive
    */
-  double getComplianceEPlaneFriction();
-
-  /**
-   * @brief set the new compliance value to each plane friction constraint
-   * @param compliance new value of plane friction constraint
-   */
-  void setComplianceEPlaneFriction(double compliance);
-
-  /**
-   * @brief get the compliance value of the volume constraint
-   */
-  double getComplianceVolume();
-
-  /**
-   * @brief set the new compliance value to each volume constraint
-   * @param compliance new value of volume constraint
-   */
-  void setComplianceVolume(double compliance);
-
-
-/**
- * @brief get the pressure value
- */
-double getPressureValue();
-
-/**
- * @brief set the pressure value to the new pressure
- * @param pressure new value of pressure
- */
-void setPressureValue(double pressure);
-
-/**
- * @brief set the constraint to active/inactive
- */
-void setState(EConstraintType type, bool state);
-
+  void setActive(EConstraintType cType, bool state) {
+    for (Constraint *c : m_constraints) {
+      if (c->getType() == cType)
+        c->setIsActive(state);
+    }
+  }
 
   /**
    * @brief Get the mutex lock of the render thread
    * @return std::mutex Render lock
    */
-  std::mutex *getLock();
+  std::mutex *getLock() { return &modelLock; }
 
   /**
    * @brief reset all the object models and time to the initial position
@@ -119,12 +111,12 @@ void setState(EConstraintType type, bool state);
    * @brief Get references to all static objects of the model
    * @return std::vector<Mesh>& References of static objects
    */
-  std::vector<Mesh> &getStatics(); // Get positions of particles/objects
+  std::vector<Mesh> &getStatics() { return staticObjs; }
   /**
    * @brief Get references to all dynamic objects of the model
    * @return std::vector<Mesh>& References of dynamic objects
    */
-  std::vector<Mesh> &getDynamics(); // Get topology information (faces)
+  std::vector<Mesh> &getDynamics() { return dynamicObjs; }
 
 private:
   /**
@@ -146,12 +138,11 @@ private:
 
   std::mutex modelLock; ///< Lock which is necessary to avoid race condition
 
-  Eigen::MatrixX3d V;
-  Eigen::MatrixX3i F;
-
   std::vector<Mesh> staticObjs;  ///< Storage of static scene objects
   std::vector<Mesh> dynamicObjs; ///< Storage of dynamic scene objects
   std::vector<double> m_slacks;
+  double m_staticMu = 0.000001;
+  double m_kineticMu = 0.00001;
 
   /// Simulation State
   std::vector<std::pair<Eigen::Index, Eigen::Index>>
@@ -162,15 +153,14 @@ private:
   Eigen::MatrixX3d m_velocities; /// (N x 3)
   std::vector<Constraint *> m_constraints;
 
-  Eigen::MatrixX3d m_initialpositions;
-
   /// External Forces (just gravity for now)
   Eigen::MatrixX3d m_gravity; /// (N x 3)
   const double m_gravityAccel =
       -0.00001; // @TODO: change scene scale such that we can put -9.81 here
 
   /// Solver Arguments
-  const int m_solverIterations = 10;    /// Max number of iterations
-  const double m_solverResidual = 1e-9; /// Max residual (sum of delta lambda)
+  const int m_solverIterations = 10; /// Max number of iterations
+  const double m_solverResidual =
+      1e-9; /// Max residual (sum of position delta norms)
   double m_time = 0;
 };

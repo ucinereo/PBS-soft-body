@@ -49,11 +49,12 @@ void GuiController::drawMenu(igl::opengl::glfw::Viewer &viewer,
 
   // get Simulation parameter values
   int timeStep = this->controller->getTimeStep();
-  float complianceDistance = this->controller->getComplianceDistance();
-  float complianceStaticPlane = this->controller->getComplianceStaticPlane();
+  float complianceDistance = this->controller->getCompliance(EDistance);
+  float complianceStaticPlane =
+      this->controller->getCompliance(EStaticPlaneCollision);
   float compliancePlaneFriction =
-      this->controller->getCompliancePlaneFriction();
-  float complianceVolume = this->controller->getComplianceVolume();
+      this->controller->getCompliance(EPlaneFriction);
+  float complianceVolume = this->controller->getCompliance(ETetVolume);
   float pressure = this->controller->getPressure();
 
   bool running = this->controller->getIsSimulationRunning();
@@ -110,7 +111,7 @@ void GuiController::drawMenu(igl::opengl::glfw::Viewer &viewer,
         std::cout
             << "current selected compliance value for distance constraint is "
             << complianceDistance << "\n";
-        this->controller->setComplianceDistance(complianceDistance);
+        this->controller->setCompliance(EDistance, complianceDistance);
       }
     }
 
@@ -129,7 +130,8 @@ void GuiController::drawMenu(igl::opengl::glfw::Viewer &viewer,
                              1.0f)) {
         std::cout << "current selected compliance value for plane collision is "
                   << complianceStaticPlane << "\n";
-        this->controller->setComplianceStaticPlane(complianceStaticPlane);
+        this->controller->setCompliance(EStaticPlaneCollision,
+                                        complianceStaticPlane);
       }
     }
 
@@ -145,7 +147,8 @@ void GuiController::drawMenu(igl::opengl::glfw::Viewer &viewer,
                              &compliancePlaneFriction, 0.0f, 1.0f)) {
         std::cout << "current selected compliance value for plane friction is "
                   << compliancePlaneFriction << "\n";
-        this->controller->setCompliancePlaneFriction(compliancePlaneFriction);
+        this->controller->setCompliance(EPlaneFriction,
+                                        compliancePlaneFriction);
       }
     }
 
@@ -162,7 +165,7 @@ void GuiController::drawMenu(igl::opengl::glfw::Viewer &viewer,
                              1.0f)) {
         std::cout << "current selected compliance value for volume is "
                   << complianceVolume << "\n";
-        this->controller->setComplianceVolume(complianceVolume);
+        this->controller->setCompliance(ETetVolume, complianceVolume);
       }
 
       if (ImGui::SliderFloat("pressure", &pressure, 0.0f, 10.0f)) {

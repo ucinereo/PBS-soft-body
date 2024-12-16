@@ -38,16 +38,7 @@ void createFloorMesh(Eigen::MatrixX3d &V, Eigen::MatrixX3i &F) {
 }
 
 void createCube(Eigen::MatrixX3d &V, Eigen::MatrixX3i &F,
-                const Eigen::Affine3d &M, const int number_of_subdivs = 0) {
-  igl::readOBJ("../assets/cube_1x.obj", V, F);
-
-  if (number_of_subdivs > 0) {
-    igl::upsample(V, F, number_of_subdivs);
-  }
-
-  // Apply ToWorld transform M
-  V = (M * V.transpose()).transpose();
-}
+                const Eigen::Affine3d &M, const int number_of_subdivs = 0) {}
 
 bool vertexIntersectsTriangle(const Eigen::Vector3d &qp,
                               const Eigen::Vector3d &q,

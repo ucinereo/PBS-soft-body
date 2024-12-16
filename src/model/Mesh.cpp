@@ -4,38 +4,26 @@
  */
 
 #include "Mesh.h"
-
 #include <Eigen/Core>
+#include <igl/copyleft/tetgen/tetrahedralize.h>
+#include <igl/upsample.h>
 
-Mesh::Mesh(Eigen::MatrixX3d V, Eigen::MatrixX3i F) : V(V), F(F) {}
-
-Mesh::Mesh(Eigen::MatrixX3d V, Eigen::MatrixX3i F, Eigen::MatrixXi TT)
-    : V(V), F(F), TT(TT) {
-  V_init = V;
+void Mesh::upsample(int nSubdivs) {
+  igl::upsample(m_vertices, m_faces, nSubdivs);
 }
 
-const Eigen::Index Mesh::numVertices() const { return V.rows(); }
+void Mesh::tetrahedralize() {
+  Eigen::MatrixX3d tetVertices; // Tetrahedral mesh vertices
+  Eigen::MatrixX4i tets;        // Tetrahedral mesh tetrahedra
+  Eigen::MatrixX3i tetFaces;    // Boundary faces of the tetrahedral mesh
 
-const Eigen::MatrixX3d Mesh::getVertices() const { return V; }
+  // Use igl::copyleft::tetgen::tetrahedralize
+  std::string flags = "pq2.0Y"; // Quality tetrahedralization, adapt as needed
+  igl::copyleft::tetgen::tetrahedralize(m_vertices, m_faces, flags, tetVertices,
+                                        tets, tetFaces);
 
-const Eigen::MatrixX3i Mesh::getFaces() const { return F; }
-
-const Eigen::MatrixXi Mesh::getTetIndices() const { return TT; };
-
-const Eigen::MatrixX3d Mesh::getInitialPositions() const { return V_init; }
-
-const Eigen::Index Mesh::numFaces() const { return F.rows(); }
-
-void Mesh::updateVertices(Eigen::MatrixX3d v) {
-  // @TODO: Maybe add some validation here to ensure that the shapes are the
-  // same?
-  V = v;
+  m_vertices = tetVertices;
+  m_initialVertices = tetVertices;
+  m_faces = tetFaces;
+  m_tets = tets;
 }
-
-Eigen::RowVector3d Mesh::getColor() const { return color; }
-
-void Mesh::updateColor(double r, double g, double b) { color << r, g, b; }
-
-void Mesh::setID(size_t id) { ID = id; }
-
-size_t Mesh::getID() { return ID; }

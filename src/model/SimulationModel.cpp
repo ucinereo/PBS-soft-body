@@ -4,6 +4,7 @@
  */
 
 #include "SimulationModel.h"
+#include "../scenes.h"
 #include "../utils.h"
 #include <Eigen/Core>
 #include <Eigen/Geometry>
@@ -18,59 +19,7 @@ SimulationModel::SimulationModel() { initialize(); }
 
 void SimulationModel::initialize() {
   // @TODO: Update this initialization with a scene parsing or something
-
-  // Load the mesh information of the cube
-  // - V is a matrix of shape (N x 3) to store vertex positions
-  // - F is a matrix of shape (N x 3) to store the face indices
-  Eigen::MatrixX3d V;
-  Eigen::MatrixX3i F;
-  igl::readOBJ("../assets/rubber_duck.obj", V, F);
-
-  // Prepare tet-gen data matrices
-  Eigen::MatrixXd TV; // Tetrahedral mesh vertices
-  Eigen::MatrixXi TT; // Tetrahedral mesh tetrahedra
-  Eigen::MatrixXi TF; // Boundary faces of the tetrahedral mesh
-
-  // Use igl::copyleft::tetgen::tetrahedralize
-  std::string flags = "pq2.0Y"; // Quality tetrahedralization, adapt as needed
-  igl::copyleft::tetgen::tetrahedralize(V, F, flags, TV, TT, TF);
-
-  V = TV;
-  F = TF;
-
-  // Prepare some rotation matrices, change as needed
-  Eigen::Matrix3d Rx, Ry, Rz;
-  Rx = Eigen::AngleAxisd(M_PI / 3, Eigen::Vector3d::UnitX());
-  Ry = Eigen::AngleAxisd(0, Eigen::Vector3d::UnitY());
-  Rz = Eigen::AngleAxisd(M_PI / 3, Eigen::Vector3d::UnitZ());
-
-  // The ducky only needs rotation :)
-  Eigen::Matrix3d R = Ry;
-  V = (R * V.transpose()).transpose();
-  for (int i = 0; i < V.rows(); i++) {
-    V(i, 1) += 5;
-  }
-
-  m_initialpositions = Eigen::MatrixX3d(V);
-
-  // Load a second ducky
-  Eigen::MatrixX3d V2 = V;
-  Eigen::MatrixX3i F2 = F;
-  Eigen::MatrixXi TT2 = TT;
-
-  for (int i = 0; i < V2.rows(); i++) {
-    V2(i, 0) += 3;
-    V2(i, 2) += 3;
-  }
-
-  // Create the actual bunny object
-  Mesh bunny(V, F, TT);
-  bunny.updateColor(0.94509804, 0.76862745, 0.05882353);
-  dynamicObjs.push_back(bunny); // Add the object to the dynamics.
-
-  Mesh bunny2(V2, F2, TT2);
-  bunny2.updateColor(0.94509804, 0.76862745, 0.65882353);
-  dynamicObjs.push_back(bunny2); // Add the object to the dynamics.
+  createDuckyScene(dynamicObjs, staticObjs, m_slacks);
 
   // Initialize a basic floor mesh as static
   Eigen::MatrixX3d floorV;
@@ -119,7 +68,7 @@ void SimulationModel::initialize() {
   //   Distance Constraints for all Triangles
   double distanceCompliance = 10000; // 1e-9;
   for (size_t i = 0; i < dynamicObjs.size(); i++) {
-    const Eigen::MatrixXi TT = dynamicObjs[i].getTetIndices();
+    const Eigen::MatrixXi TT = dynamicObjs[i].getTets();
     Eigen::Index start, length;
     std::tie(start, length) = m_indices[i];
     for (Eigen::Index j = 0; j < TT.rows(); j++) {
@@ -154,7 +103,7 @@ void SimulationModel::initialize() {
   // Tet-Volume-Constraint
   double tetCompliace = 1.0;
   for (size_t i = 0; i < dynamicObjs.size(); i++) {
-    const Eigen::MatrixXi TT = dynamicObjs[i].getTetIndices();
+    const Eigen::MatrixXi TT = dynamicObjs[i].getTets();
     Eigen::Index start, length;
     std::tie(start, length) = m_indices[i];
     for (Eigen::Index j = 0; j < TT.rows(); j++) {
@@ -166,114 +115,13 @@ void SimulationModel::initialize() {
   }
 }
 
-double SimulationModel::getComplianceEDistance() {
-  double result = 0.0;
-  for (Constraint *c : m_constraints) {
-    result = c->getCompliance();
-    return result;
-  }
-  return result;
-}
-
-void SimulationModel::setComplianceEDistance(double compliance) {
-  std::cout << "Set distance compliance!\n";
-  for (Constraint *c : m_constraints) {
-    if (c->getType() == EDistance) {
-      c->setCompliance(compliance);
-    }
-  }
-}
-
-double SimulationModel::getComplianceEStaticPlaneCollision() {
-  double result = 0.0;
-  for (Constraint *c : m_constraints) {
-    if (c->getType() == EStaticPlaneCollision) {
-      result = c->getCompliance();
-      return result;
-    }
-  }
-  return result;
-}
-
-void SimulationModel::setComplianceEstaticPlaneCollision(double compliance) {
-  for (Constraint *c : m_constraints) {
-    if (c->getType() == EStaticPlaneCollision) {
-      c->setCompliance(compliance);
-    }
-  }
-}
-
-double SimulationModel::getComplianceEPlaneFriction() {
-  double result = 0.0;
-  for (Constraint *c : m_constraints) {
-    if (c->getType() == EPlaneFriction) {
-      result = c->getCompliance();
-      return result;
-    }
-  }
-  return result;
-}
-
-void SimulationModel::setComplianceEPlaneFriction(double compliance) {
-  for (Constraint *c : m_constraints) {
-    if (c->getType() == EPlaneFriction) {
-      c->setCompliance(compliance);
-    }
-  }
-}
-
-double SimulationModel::getComplianceVolume() {
-  double result = 0.0;
-  for (Constraint *c : m_constraints) {
-    if (c->getType() == EShellVolume) {
-      result = c->getCompliance();
-      return result;
-    }
-  }
-  return result;
-}
-
-void SimulationModel::setComplianceVolume(double compliance) {
-  for (Constraint *c : m_constraints) {
-    if (c->getType() == ETetVolume) {
-      c->setCompliance(compliance);
-    }
-  }
-}
-
-double SimulationModel::getPressureValue() {
-  double pressure = 0.0;
-  for (Constraint *c : m_constraints) {
-    if (c->getType() == ETetVolume) {
-      pressure = ((TetVolumeConstraint *)c)->getPressure();
-      return pressure;
-    }
-  }
-  return pressure;
-}
-
-void SimulationModel::setPressureValue(double pressure) {
-  for (Constraint *c : m_constraints) {
-    if (c->getType() == ETetVolume) {
-      ((TetVolumeConstraint *)c)->setPressure(pressure);
-    }
-  }
-}
-
-void SimulationModel::setState(EConstraintType type, bool state) {
-  for (Constraint *c : m_constraints) {
-    if (c->getType() == type) {
-      c->setIsActive(state);
-    }
-  }
-}
-
 void SimulationModel::reset() {
   // Reset all the positions
   for (size_t i = 0; i < dynamicObjs.size(); i++) {
     Eigen::Index start, length;
     std::tie(start, length) = m_indices[i];
-    dynamicObjs[i].updateVertices(dynamicObjs[i].getInitialPositions());
+
+    dynamicObjs[i].resetVertices();
     m_positions.block(start, 0, length, 3) = dynamicObjs[i].getVertices();
   }
 
@@ -339,29 +187,8 @@ void SimulationModel::exportMesh() {
 void SimulationModel::getStaticCollConstraints(
     const Eigen::MatrixX3d &Xp, const Eigen::MatrixX3d &X,
     std::vector<Constraint *> &collConstraints) const {
-  //  Eigen::Vector3d floorNormal(0, 1, 0);
-  //  double staticMu = 0.9;
-  //  double kineticMu = 0.9;
-  //  double collisionCompliance = 1e-9;
-  //  double frictionCompliance = 1e-9;
-  //  for (Eigen::Index i = 0; i < X.rows(); i++) {
-  //    // Check if the vertex is penetrating the floor, and if so add a static
-  //    // plane collision constraint
-  //    double penetrationDepth = floorNormal.dot(X.row(i).transpose());
-  //    if (penetrationDepth < 0) {
-  //      auto *c0 = new StaticPlaneCollisionConstraint(collisionCompliance,
-  //                                                    floorNormal, 0.0, i);
-  //      auto *c1 = new PlaneFrictionConstraint(frictionCompliance,
-  //      floorNormal,
-  //                                             staticMu, kineticMu, i);
-  //
-  //      collConstraints.push_back(c0);
-  //      collConstraints.push_back(c1);
-  //    }
-  //  }
-
-  double staticMu = 0.000001; // 0.00002;
-  double kineticMu = 0.00001;
+  // Hardcoded because it makes no sense to change these, we want collisions and
+  // friction to be as stiff as possible
   double collisionCompliance = 1e-9;
   double frictionCompliance = 1e-9;
 
@@ -392,8 +219,8 @@ void SimulationModel::getStaticCollConstraints(
             auto *c0 = new StaticPlaneCollisionConstraint(collisionCompliance,
                                                           n, restDistance, qi);
             auto *c1 = new PlaneFrictionConstraint(frictionCompliance, n,
-                                                   penetrationDepth, staticMu,
-                                                   kineticMu, qi);
+                                                   penetrationDepth, m_staticMu,
+                                                   m_kineticMu, qi);
 
             collConstraints.push_back(c0);
             collConstraints.push_back(c1);
@@ -418,7 +245,8 @@ void SimulationModel::update(double deltaTime) {
   if (m_time >= 10000 && m_time < 10250) {
     f_ext *= -2;
     //    f_ext += Eigen::MatrixX3d::Random(f_ext.rows(), f_ext.cols()) * 0.005;
-    f_ext(Eigen::all, 0) += Eigen::RowVectorXd::Ones(f_ext.rows()) * 0.000035;
+    //    f_ext(Eigen::all, 0) += Eigen::RowVectorXd::Ones(f_ext.rows()) *
+    //    0.000035;
   } else if (m_time >= 10250) {
     m_time = 0;
   }
@@ -436,6 +264,7 @@ void SimulationModel::update(double deltaTime) {
 
   std::vector<size_t> indices(m_constraints.size() + collConstraints.size());
   std::iota(indices.begin(), indices.end(), 0);
+  // Maybe shuffle indices for more stability?
 
   // Initialize Lagrange multipliers for each constraint
   Eigen::VectorXd lambda = Eigen::VectorXd::Zero((Eigen::Index)indices.size());
@@ -489,12 +318,7 @@ void SimulationModel::update(double deltaTime) {
   for (size_t i = 0; i < dynamicObjs.size(); i++) {
     Eigen::Index start, length;
     std::tie(start, length) = m_indices[i];
-    dynamicObjs[i].updateVertices(m_positions.block(start, 0, length, 3));
+    Eigen::MatrixX3d nextVertices = m_positions.block(start, 0, length, 3);
+    dynamicObjs[i].updateVertices(nextVertices);
   }
 }
-
-std::vector<Mesh> &SimulationModel::getStatics() { return staticObjs; }
-
-std::vector<Mesh> &SimulationModel::getDynamics() { return dynamicObjs; }
-
-std::mutex *SimulationModel::getLock() { return &modelLock; }

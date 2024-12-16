@@ -76,6 +76,12 @@ public:
     }
   }
 
+  double getStaticMu() { return m_staticMu; }
+  double getKineticMu() { return m_kineticMu; }
+
+  void setStaticMu(double staticMu) { m_staticMu = staticMu; }
+  void setKineticMu(double kineticMu) { m_kineticMu = kineticMu; }
+
   /**
    * @brief set the constraint to active/inactive
    */

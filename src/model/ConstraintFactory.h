@@ -14,12 +14,35 @@ class ConstraintFactory {
 public:
   using Indices = std::vector<std::pair<Eigen::Index, Eigen::Index>>;
 
-  static void meshDistance(std::vector<Constraint *> &constraints,
-                           Eigen::MatrixX3d &positions,
-                           const std::vector<Mesh> &meshes,
-                           const Indices &indices, double compliance) {
+  static void meshFaceDistance(std::vector<Constraint *> &constraints,
+                               Eigen::MatrixX3d &positions,
+                               const std::vector<Mesh> &meshes,
+                               const Indices &indices, double compliance) {
     for (size_t i = 0; i < meshes.size(); i++) {
-      const Eigen::MatrixXi TT = meshes[i].getTets();
+      const Eigen::MatrixX3i F = meshes[i].getFaces();
+      Eigen::Index start, length;
+      std::tie(start, length) = indices[i];
+      for (Eigen::Index j = 0; j < F.rows(); j++) {
+        // Add a distance constraint for each Face-Edge
+        auto *c0 = new DistanceConstraint(compliance, positions,
+                                          F(j, 0) + start, F(j, 1) + start);
+        auto *c1 = new DistanceConstraint(compliance, positions,
+                                          F(j, 0) + start, F(j, 2) + start);
+        auto *c2 = new DistanceConstraint(compliance, positions,
+                                          F(j, 1) + start, F(j, 2) + start);
+        constraints.push_back(c0);
+        constraints.push_back(c1);
+        constraints.push_back(c2);
+      }
+    }
+  }
+
+  static void meshTetDistance(std::vector<Constraint *> &constraints,
+                              Eigen::MatrixX3d &positions,
+                              const std::vector<Mesh> &meshes,
+                              const Indices &indices, double compliance) {
+    for (size_t i = 0; i < meshes.size(); i++) {
+      const Eigen::MatrixX4i TT = meshes[i].getTets();
       Eigen::Index start, length;
       std::tie(start, length) = indices[i];
       for (Eigen::Index j = 0; j < TT.rows(); j++) {
@@ -54,7 +77,7 @@ public:
                         const std::vector<Mesh> &meshes, const Indices &indices,
                         double compliance, double pressure) {
     for (size_t i = 0; i < meshes.size(); i++) {
-      const Eigen::MatrixXi TT = meshes[i].getTets();
+      const Eigen::MatrixX4i TT = meshes[i].getTets();
       Eigen::Index start, length;
       std::tie(start, length) = indices[i];
       for (Eigen::Index j = 0; j < TT.rows(); j++) {

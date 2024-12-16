@@ -30,19 +30,20 @@ public:
    * @brief Getter for time step size
    * @return Current time step setting
    */
-  int getTimeStep();
+  int getTimeStep() { return this->timeStep; }
 
   /**
    * @brief Set time step size
    * @param timeStep Time step to set
    */
-  void setTimeStep(int timeStep);
+  void setTimeStep(int timeStep) { this->timeStep = timeStep; }
 
   /**
    * @brief get the compliance value of some constraint type
    */
   double getCompliance(EConstraintType cType) const {
-    return model.getCompliance(cType);
+    double compliance = model.getCompliance(cType);
+    return (std::log10(compliance) + 5) / 10;
   }
 
   /**
@@ -50,32 +51,54 @@ public:
    * @param compliance new value of the constraint compliance
    */
   void setCompliance(EConstraintType cType, double compliance) {
-    model.setCompliance(cType, compliance);
+    model.setCompliance(cType, std::pow(10, compliance * 10 - 5));
   }
 
   /**
    * @brief Getter for pressure value
    * @return Current pressure value
    */
-  double getPressure();
+  double getPressure() { return model.getPressureValue(); }
 
   /**
    * @brief Set pressure value
    * @param pressure pressure value it gets updated to
    */
-  void setPressure(double pressure);
+  void setPressure(double pressure) { model.setPressureValue(pressure); }
 
   /**
-   * @brief Getter for friction value
-   * @return current friction value
+   * @brief Getter for the static friction value
+   * @return current static friction value
    */
-  float getFriction();
+  double getStaticFriction() {
+    double staticMu = model.getStaticMu();
+    return (std::log10(staticMu) + 9) / 10;
+  }
 
   /**
-   * @brief Set friction value
-   * @param friction friction value it gets updated to
+   * @brief Getter for the kinetic friction value
+   * @return current kinetic friction value
    */
-  void setFriction(double friction);
+  double getKineticFriction() {
+    double kineticMu = model.getKineticMu();
+    return (std::log10(kineticMu) + 9) / 10;
+  }
+
+  /**
+   * @brief Set the static friction value
+   * @param staticFriction static friction value it gets updated to
+   */
+  void setStaticFriction(double staticFriction) {
+    model.setStaticMu(std::pow(10, staticFriction * 10 - 9));
+  }
+
+  /**
+   * @brief Set the kinetic friction value
+   * @param kineticFriction kinetic friction value it gets updated to
+   */
+  void setKineticFriction(double kineticFriction) {
+    model.setKineticMu(std::pow(10, kineticFriction * 10 - 9));
+  }
 
   /**
    * @brief executes a single step of the simulation
@@ -131,8 +154,7 @@ private:
 
   std::thread *simulationThread; ///< Independent physical update thread
 
-  int timeStep = 24;      ///< initial time step value of the simulation
-  double friction = 0.0f; ///< initial friction value
+  int timeStep = 24; ///< initial time step value of the simulation
 
   bool isSimulationRunning =
       false; ///< says if the simulation is running or not

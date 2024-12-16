@@ -35,24 +35,6 @@ SimulationController::SimulationController(int FPS)
   renderer.getViewer().launch_rendering(true);
 }
 
-int SimulationController::getTimeStep() { return this->timeStep; }
-
-void SimulationController::setTimeStep(int timeStep) {
-  this->timeStep = timeStep;
-}
-
-double SimulationController::getPressure() { return model.getPressureValue(); }
-
-void SimulationController::setPressure(double pressure) {
-  model.setPressureValue(pressure);
-}
-
-float SimulationController::getFriction() { return this->friction = friction; }
-
-void SimulationController::setFriction(double friction) {
-  this->friction = friction;
-}
-
 void SimulationController::singleStep() {
   this->isSimulationRunning = true;
   model.getLock()->lock();

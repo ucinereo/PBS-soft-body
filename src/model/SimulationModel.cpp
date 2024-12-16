@@ -40,12 +40,6 @@ void SimulationModel::initialize() {
   // Initialize velocity state matrix with zeros
   m_velocities = Eigen::MatrixX3d::Zero(m_positions.rows(), m_positions.cols());
 
-  // Set a few example velocities for some action
-  m_velocities.middleRows(m_indices[0].first, m_indices[0].second).col(0) =
-      Eigen::RowVectorXd::Constant(m_indices[0].second, -1e-2);
-  //  m_velocities.middleRows(m_indices[1].first, m_indices[1].second).col(0) =
-  //      Eigen::RowVectorXd::Constant(m_indices[1].second, 1e-2);
-
   // Diagonal of the mass matrix, currently 1 for all vertices
   m_mass = Eigen::VectorXd::Ones(m_positions.rows());
   m_massInv = m_mass.cwiseInverse();
@@ -56,13 +50,17 @@ void SimulationModel::initialize() {
                                         .replicate(m_positions.rows(), 1);
 
   //   Distance Constraints for all Triangles
-  double distanceCompliance = 10000; // 1e-9;
-  ConstraintFactory::meshDistance(m_constraints, m_positions, m_dynamicObjs,
-                                  m_indices, distanceCompliance);
+  double distanceCompliance = 500;
+  ConstraintFactory::meshFaceDistance(m_constraints, m_positions, m_dynamicObjs,
+                                      m_indices, distanceCompliance);
+  //  double distanceCompliance = 10000;
+  //  ConstraintFactory::meshTetDistance(m_constraints, m_positions,
+  //  m_dynamicObjs,
+  //                                  m_indices, distanceCompliance);
 
   // Tet-Volume-Constraint
   double tetCompliance = 1.0;
-  double tetPressure = 10;
+  double tetPressure = 1;
   ConstraintFactory::tetVolume(m_constraints, m_positions, m_dynamicObjs,
                                m_indices, tetCompliance, tetPressure);
 }
@@ -160,15 +158,16 @@ void SimulationModel::update(double deltaTime) {
 
   // @TODO: Remove this, only used for testing
   // Reverse Direction of external force every 3 seconds for 0.5s
-  m_time += deltaTime;
-  if (m_time >= 10000 && m_time < 10250) {
-    f_ext *= -2;
-    //    f_ext += Eigen::MatrixX3d::Random(f_ext.rows(), f_ext.cols()) * 0.005;
-    //    f_ext(Eigen::all, 0) += Eigen::RowVectorXd::Ones(f_ext.rows()) *
-    //    0.000035;
-  } else if (m_time >= 10250) {
-    m_time = 0;
-  }
+  //  m_time += deltaTime;
+  //  if (m_time >= 10000 && m_time < 10250) {
+  //    f_ext *= -2;
+  //    //    f_ext += Eigen::MatrixX3d::Random(f_ext.rows(), f_ext.cols()) *
+  //    0.005;
+  //    //    f_ext(Eigen::all, 0) += Eigen::RowVectorXd::Ones(f_ext.rows()) *
+  //    //    0.000035;
+  //  } else if (m_time >= 10250) {
+  //    m_time = 0;
+  //  }
 
   // Predict positions
   Eigen::MatrixX3d x = m_positions;

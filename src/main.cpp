@@ -6,6 +6,6 @@
 #include "controller/SimulationController.h"
 
 int main() {
-  SimulationController controller(24);
+  SimulationController controller(120);
   return 0;
 }

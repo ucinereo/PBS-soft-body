@@ -154,7 +154,7 @@ private:
 
   std::thread *simulationThread; ///< Independent physical update thread
 
-  int timeStep = 24; ///< initial time step value of the simulation
+  int timeStep = 5; ///< initial time step value of the simulation
 
   bool isSimulationRunning =
       false; ///< says if the simulation is running or not

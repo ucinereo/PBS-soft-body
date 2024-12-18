@@ -117,42 +117,47 @@ void GuiController::drawMenu(igl::opengl::glfw::Viewer &viewer,
       }
     }
 
-    if (ImGui::CollapsingHeader("StaticPlaneCollision constraint",
-                                ImGuiTreeNodeFlags_DefaultOpen)) {
+    //    if (ImGui::CollapsingHeader("StaticPlaneCollision constraint",
+    //                                ImGuiTreeNodeFlags_DefaultOpen)) {
+    //
+    //      if (ImGui::Checkbox("Static Plane collision active",
+    //                          &activeStaticPlane)) {
+    //
+    //        std::cout << "Is StaticPlaneCollision active: " << std::boolalpha
+    //                  << activeStaticPlane << std::endl;
+    //        this->controller->setState(activeStaticPlane,
+    //        EStaticPlaneCollision);
+    //      }
+    //
+    //      if (ImGui::SliderFloat("static compliance", &complianceStaticPlane,
+    //      0.0f,
+    //                             1.0f)) {
+    //        std::cout << "current selected compliance value for plane
+    //        collision is "
+    //                  << complianceStaticPlane << "\n";
+    //        this->controller->setCompliance(EStaticPlaneCollision,
+    //                                        complianceStaticPlane);
+    //      }
+    //    }
 
-      if (ImGui::Checkbox("Static Plane collision active",
-                          &activeStaticPlane)) {
-
-        std::cout << "Is StaticPlaneCollision active: " << std::boolalpha
-                  << activeStaticPlane << std::endl;
-        this->controller->setState(activeStaticPlane, EStaticPlaneCollision);
-      }
-
-      if (ImGui::SliderFloat("static compliance", &complianceStaticPlane, 0.0f,
-                             1.0f)) {
-        std::cout << "current selected compliance value for plane collision is "
-                  << complianceStaticPlane << "\n";
-        this->controller->setCompliance(EStaticPlaneCollision,
-                                        complianceStaticPlane);
-      }
-    }
-
-    if (ImGui::CollapsingHeader("PlaneFriction constraint",
-                                ImGuiTreeNodeFlags_DefaultOpen)) {
-      if (ImGui::Checkbox("Friction active", &activeFriction)) {
-        std::cout << "Is Friction active: " << std::boolalpha << activeFriction
-                  << std::endl;
-        this->controller->setState(activeFriction, EPlaneFriction);
-      }
-
-      if (ImGui::SliderFloat("Plane friction compliance",
-                             &compliancePlaneFriction, 0.0f, 1.0f)) {
-        std::cout << "current selected compliance value for plane friction is "
-                  << compliancePlaneFriction << "\n";
-        this->controller->setCompliance(EPlaneFriction,
-                                        compliancePlaneFriction);
-      }
-    }
+    //    if (ImGui::CollapsingHeader("PlaneFriction constraint",
+    //                                ImGuiTreeNodeFlags_DefaultOpen)) {
+    //      if (ImGui::Checkbox("Friction active", &activeFriction)) {
+    //        std::cout << "Is Friction active: " << std::boolalpha <<
+    //        activeFriction
+    //                  << std::endl;
+    //        this->controller->setState(activeFriction, EPlaneFriction);
+    //      }
+    //
+    //      if (ImGui::SliderFloat("Plane friction compliance",
+    //                             &compliancePlaneFriction, 0.0f, 1.0f)) {
+    //        std::cout << "current selected compliance value for plane friction
+    //        is "
+    //                  << compliancePlaneFriction << "\n";
+    //        this->controller->setCompliance(EPlaneFriction,
+    //                                        compliancePlaneFriction);
+    //      }
+    //    }
 
     if (ImGui::CollapsingHeader("Volume constraint",
                                 ImGuiTreeNodeFlags_DefaultOpen)) {

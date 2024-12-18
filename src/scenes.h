@@ -9,12 +9,81 @@
 #include <Eigen/Core>
 #include <Eigen/Geometry>
 #include <igl/copyleft/tetgen/tetrahedralize.h>
+#include <igl/decimate.h>
 #include <igl/readOBJ.h>
 #include <igl/upsample.h>
 
 void createDuckyScene(std::vector<Mesh> &dynamicObjs,
                       std::vector<Mesh> &staticObjs,
                       std::vector<double> &slacks) {
+  // Create both Ducks
+  Eigen::Matrix3d Rx, Ry, Rz;
+  Ry = Eigen::AngleAxisd(0, Eigen::Vector3d::UnitY());
+
+  auto T1 = Eigen::Translation3d(Eigen::Vector3d(-5, 20, 0));
+  Eigen::Affine3d M1 = T1 * Ry;
+
+  auto T2 = Eigen::Translation3d(Eigen::Vector3d(-5, 30, 0));
+  Eigen::Affine3d M2 = T2 * Ry;
+
+  Mesh duck1 = Mesh::createDuck(M1);
+  duck1.tetrahedralize();
+  duck1.updateColor(0.94509804, 0.76862745, 0.05882353);
+  dynamicObjs.push_back(duck1); // Add the object to the dynamics.
+
+  Mesh duck2 = Mesh::createDuck(M2);
+  duck2.tetrahedralize();
+  duck2.updateColor(0.94509804, 0.76862745, 0.65882353);
+  dynamicObjs.push_back(duck2); // Add the object to the dynamics.
+
+  // Create static cuboid
+  Rx = Eigen::AngleAxisd(M_PI / 3, Eigen::Vector3d::UnitX());
+  Ry = Eigen::AngleAxisd(0, Eigen::Vector3d::UnitY());
+  Rz = Eigen::AngleAxisd(M_PI / 3, Eigen::Vector3d::UnitZ());
+
+  auto T3 = Eigen::Translation3d(Eigen::Vector3d(-5, 5, 3));
+  auto R3 = Rz * Rx * Ry;
+  auto S3 = Eigen::Scaling(Eigen::Vector3d(1, 3, 3));
+  Eigen::Affine3d M3 = T3 * R3 * S3;
+
+  auto Tpalme = Eigen::Translation3d(Eigen::Vector3d(-5, 0, 0));
+  auto Spalme = Eigen::Scaling(Eigen::Vector3d(1, 1, 1));
+  Eigen::Affine3d Mpalme = Tpalme * Spalme;
+  Eigen::MatrixX3d V;
+  Eigen::MatrixX3i F;
+  igl::readOBJ("../assets/blaetter.obj", V, F);
+  Mesh palme(V, F, Mpalme);
+  palme.updateColor(0.149, 0.302, 0.047);
+  staticObjs.push_back(palme);
+  slacks.push_back(1e-1);
+
+  Eigen::MatrixX3d V3;
+  Eigen::MatrixX3i F3;
+  igl::readOBJ("../assets/stamm.obj", V3, F3);
+  Mesh stamm(V3, F3, Mpalme);
+  stamm.updateColor(0.302, 0.192, 0.063);
+  staticObjs.push_back(stamm);
+  slacks.push_back(1e-1);
+
+  Eigen::MatrixX3d V2;
+  Eigen::MatrixX3i F2;
+  igl::readOBJ("../assets/wasser.obj", V2, F2);
+  Mesh wasser(V2, F2, Mpalme);
+  wasser.updateColor(0.769, 0.588, 0.122);
+  staticObjs.push_back(wasser);
+  slacks.push_back(1e-1);
+
+  // Initialize a basic floor mesh as static
+  Mesh floor = Mesh::createFloor();
+  floor.updateColor(0.4, 0.4, 0.4);
+  floor.updateColor(0.427, 0.741, 0.949);
+  staticObjs.push_back(floor);
+  slacks.push_back(std::numeric_limits<double>::infinity());
+}
+
+void createDuckyScene2(std::vector<Mesh> &dynamicObjs,
+                       std::vector<Mesh> &staticObjs,
+                       std::vector<double> &slacks) {
   // Create both Ducks
   Eigen::Matrix3d Rx, Ry, Rz;
   Ry = Eigen::AngleAxisd(0, Eigen::Vector3d::UnitY());

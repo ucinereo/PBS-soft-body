@@ -18,7 +18,9 @@ SimulationModel::SimulationModel() { initialize(); }
 
 void SimulationModel::initialize() {
   // @TODO: Update this initialization with a scene parsing or something
+
   createDuckyScene(m_dynamicObjs, m_staticObjs, m_slacks);
+  //  createDuckyScene2(m_dynamicObjs, m_staticObjs, m_slacks);
 
   // Compute indices in the per vertex state matrices for each object
   Eigen::Index totalNumVertices = 0;

@@ -22,7 +22,8 @@ void Renderer::initialize() {
   viewer.core().shadow_height = 10000;
   viewer.core().shadow_width = 10000;
 
-  viewer.launch_init();
+  //  viewer.launch_init(false, "PBS Soft Body", 3840, 2160);
+  viewer.launch_init(false, "PBS Soft Body");
   // Initialize the rendering buffers VAO, VBO, EBO and stuff...
   viewer.data().meshgl.init();
 

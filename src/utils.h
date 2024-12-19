@@ -7,29 +7,36 @@
 #pragma once
 
 #include <Eigen/Core>
+#include <Eigen/Geometry>
 
-/**
- * @brief Create a floor mesh, consisting of two triangles, which spans the
- * coordinates
- * (-100, -100) to (100, 100)
- * @param V Vertex Matrix reference which is overwritten
- * @param F Fragment Matrix reference which is overwritten
- */
-void createFloorMesh(Eigen::MatrixX3d &V, Eigen::MatrixX3i &F) {
-  Eigen::MatrixX3d floorV(4, 3);
-  Eigen::MatrixX3i floorF(2, 3);
+inline bool vertexIntersectsTriangle(const Eigen::Vector3d &qp,
+                                     const Eigen::Vector3d &q,
+                                     const Eigen::Vector3d &x1,
+                                     const Eigen::Vector3d &x2,
+                                     const Eigen::Vector3d &x3, double slack,
+                                     double &penetrationDepth) {
+  Eigen::Vector3d e12 = x2 - x1, e13 = x3 - x1;
+  Eigen::Vector3d n = e12.cross(e13).normalized();
+  double d = n.dot(q - x1);
+  if (n.dot(qp - x1) < -slack || d > 1e-3) {
+    return false;
+  }
+  Eigen::Vector3d dq = qp - q;
 
-  float w = 100.f;
-  floorV << -w, 0.0, -w, // Bottom-left corner
-      w, 0.0, w,         // Top-right corner
-      w, 0.0, -w,        // Bottom-right corner
-      -w, 0.0, w;        // Top-left corner
+  // Solve n.dot(qp + t * dq - x1) = 0 for t
+  double t = n.dot(x1 - qp) / n.dot(dq);
 
-  // Define faces for the floor (two triangles)
-  floorF << 0, 1, 2, // First triangle
-      0, 3, 1;       // Second triangle
+  Eigen::Vector3d p = qp + t * dq;
+  penetrationDepth = -d;
 
-  // Set correct matrices for return
-  V = floorV;
-  F = floorF;
+  double A123 = e12.cross(e13).norm() / 2;
+  double A12p = (p - x1).cross(p - x2).norm() / 2;
+  double A13p = (p - x1).cross(p - x3).norm() / 2;
+  double A23p = (p - x2).cross(p - x3).norm() / 2;
+
+  double u = A12p / A123;
+  double v = A13p / A123;
+  double w = A23p / A123;
+
+  return abs(1 - u - v - w) < 1e-12;
 }

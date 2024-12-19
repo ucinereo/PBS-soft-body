@@ -35,58 +35,6 @@ SimulationController::SimulationController(int FPS)
   renderer.getViewer().launch_rendering(true);
 }
 
-int SimulationController::getTimeStep() { return this->timeStep; }
-
-void SimulationController::setTimeStep(int timeStep) {
-  this->timeStep = timeStep;
-}
-
-double SimulationController::getComplianceStaticPlane() {
-  return model.getComplianceEStaticPlaneCollision();
-}
-
-void SimulationController::setComplianceStaticPlane(
-    double complianceStaticPlane) {
-  model.setComplianceEstaticPlaneCollision(complianceStaticPlane);
-}
-
-double SimulationController::getComplianceDistance() {
-  return model.getComplianceEDistance();
-}
-
-void SimulationController::setComplianceDistance(double complianceDistance) {
-  model.setComplianceEDistance(complianceDistance);
-}
-
-double SimulationController::getCompliancePlaneFriction() {
-  return model.getComplianceEPlaneFriction();
-}
-
-void SimulationController::setCompliancePlaneFriction(
-    double compliancePlaneFriction) {
-  model.setComplianceEPlaneFriction(compliancePlaneFriction);
-}
-
-double SimulationController::getComplianceVolume() {
-  return model.getComplianceVolume();
-}
-
-void SimulationController::setComplianceVolume(double complianceVolume) {
-  model.setComplianceVolume(complianceVolume);
-}
-
-float SimulationController::getPressure() { return model.getPressureValue(); }
-
-void SimulationController::setPressure(float pressure) {
-  model.setPressureValue(pressure);
-}
-
-float SimulationController::getFriction() { return this->friction = friction; }
-
-void SimulationController::setFriction(float friction) {
-  this->friction = friction;
-}
-
 void SimulationController::singleStep() {
   this->isSimulationRunning = true;
   model.getLock()->lock();
@@ -154,7 +102,7 @@ bool SimulationController::getIsSimulationRunning() {
 }
 
 void SimulationController::setState(bool state, EConstraintType type) {
-  model.setState(type, state);
+  model.setActive(type, state);
 }
 
 void SimulationController::runSimulationThread() {

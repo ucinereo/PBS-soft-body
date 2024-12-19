@@ -4,38 +4,61 @@
  */
 
 #include "Mesh.h"
-
 #include <Eigen/Core>
+#include <igl/copyleft/tetgen/tetrahedralize.h>
+#include <igl/upsample.h>
 
-Mesh::Mesh(Eigen::MatrixX3d V, Eigen::MatrixX3i F) : V(V), F(F) {}
-
-Mesh::Mesh(Eigen::MatrixX3d V, Eigen::MatrixX3i F, Eigen::MatrixXi TT)
-    : V(V), F(F), TT(TT) {
-  V_init = V;
+void Mesh::upsample(int nSubdivs) {
+  igl::upsample(m_vertices, m_faces, nSubdivs);
 }
 
-const Eigen::Index Mesh::numVertices() const { return V.rows(); }
+void Mesh::tetrahedralize() {
+  Eigen::MatrixX3d tetVertices; // Tetrahedral mesh vertices
+  Eigen::MatrixX4i tets;        // Tetrahedral mesh tetrahedra
+  Eigen::MatrixX3i tetFaces;    // Boundary faces of the tetrahedral mesh
 
-const Eigen::MatrixX3d Mesh::getVertices() const { return V; }
+  // Use igl::copyleft::tetgen::tetrahedralize
+  std::string flags = "pq2.0Y"; // Quality tetrahedralization, adapt as needed
+  igl::copyleft::tetgen::tetrahedralize(m_vertices, m_faces, flags, tetVertices,
+                                        tets, tetFaces);
 
-const Eigen::MatrixX3i Mesh::getFaces() const { return F; }
-
-const Eigen::MatrixXi Mesh::getTetIndices() const { return TT; };
-
-const Eigen::MatrixX3d Mesh::getInitialPositions() const { return V_init; }
-
-const Eigen::Index Mesh::numFaces() const { return F.rows(); }
-
-void Mesh::updateVertices(Eigen::MatrixX3d v) {
-  // @TODO: Maybe add some validation here to ensure that the shapes are the
-  // same?
-  V = v;
+  m_vertices = tetVertices;
+  m_initialVertices = tetVertices;
+  m_faces = tetFaces;
+  m_tets = tets;
 }
 
-Eigen::RowVector3d Mesh::getColor() const { return color; }
+Mesh Mesh::createFloor() {
+  Eigen::MatrixX3d V(4, 3);
+  Eigen::MatrixX3i F(2, 3);
 
-void Mesh::updateColor(double r, double g, double b) { color << r, g, b; }
+  float w = 100.f;
+  V << -w, 0.0, -w, // Bottom-left corner
+      w, 0.0, w,    // Top-right corner
+      w, 0.0, -w,   // Bottom-right corner
+      -w, 0.0, w;   // Top-left corner
 
-void Mesh::setID(size_t id) { ID = id; }
+  // Define faces for the floor (two triangles)
+  F << 0, 1, 2, // First triangle
+      0, 3, 1;  // Second triangle
 
-size_t Mesh::getID() { return ID; }
+  return Mesh(V, F);
+}
+
+Mesh Mesh::createCube(Eigen::Affine3d &toWorld) {
+  Eigen::MatrixX3d V;
+  Eigen::MatrixX3i F;
+
+  igl::readOBJ("../assets/cube_1x.obj", V, F);
+
+  return Mesh(V, F, toWorld);
+}
+
+Mesh Mesh::createDuck(Eigen::Affine3d &toWorld) {
+  Eigen::MatrixX3d V;
+  Eigen::MatrixX3i F;
+
+  igl::readOBJ("../assets/rubber_duck.obj", V, F);
+
+  return Mesh(V, F, toWorld);
+}

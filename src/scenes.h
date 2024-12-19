@@ -47,8 +47,7 @@ void createDuckyScene(std::vector<Mesh> &dynamicObjs,
   Eigen::Affine3d M3 = T3 * R3 * S3;
 
   auto Tpalme = Eigen::Translation3d(Eigen::Vector3d(-5, 0, 0));
-  auto Spalme = Eigen::Scaling(Eigen::Vector3d(1, 1, 1));
-  Eigen::Affine3d Mpalme = Tpalme * Spalme;
+  Eigen::Affine3d Mpalme = Tpalme * Eigen::Affine3d::Identity();
   Eigen::MatrixX3d V;
   Eigen::MatrixX3i F;
   igl::readOBJ("../assets/blaetter.obj", V, F);

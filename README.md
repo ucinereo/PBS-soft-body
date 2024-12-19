@@ -63,7 +63,7 @@ This project is built using **CMake**. To build the project:
    ```bash
    mkdir build
    cd build
-   cmake ..
+   cmake -DCMAKE_BUILD_TYPE=Release ..
    ```
 
 5. Build the project:

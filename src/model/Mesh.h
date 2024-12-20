@@ -4,6 +4,7 @@
  */
 #pragma once
 
+#include "./accel/bvh.h"
 #include <Eigen/Core>
 #include <Eigen/Geometry>
 #include <igl/readOBJ.h>
@@ -104,6 +105,10 @@ public:
 
   void tetrahedralize();
 
+  void buildBVH(double slack);
+
+  void query(Eigen::Vector3d &q, std::vector<Eigen::Index> &triangles) const;
+
   /**
    * @brief Get the internal ID of the mesh (renderer ID, not libigl)
    * @return size_t index of mesh
@@ -134,6 +139,8 @@ private:
   Eigen::MatrixX3d m_initialVertices;
   Eigen::MatrixX3i m_faces;
   Eigen::MatrixX4i m_tets;
+
+  BVH *m_bvh = nullptr;
 
   Eigen::Affine3d m_toWorld = Eigen::Affine3d::Identity();
 

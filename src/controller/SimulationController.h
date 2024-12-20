@@ -9,6 +9,7 @@
 #include "../model/SimulationModel.h"
 #include "../view/Renderer.h"
 #include "GuiController.h"
+#include <chrono>
 #include <thread>
 
 /**
@@ -100,6 +101,8 @@ public:
     model.setKineticMu(std::pow(10, kineticFriction * 10 - 9));
   }
 
+  float getFPS() const { return m_fps; }
+
   /**
    * @brief executes a single step of the simulation
    */
@@ -155,6 +158,7 @@ private:
   std::thread *simulationThread; ///< Independent physical update thread
 
   int timeStep = 5; ///< initial time step value of the simulation
+  float m_fps = 0;
 
   bool isSimulationRunning =
       false; ///< says if the simulation is running or not

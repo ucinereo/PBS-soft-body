@@ -109,7 +109,10 @@ public:
           Eigen::Vector3d qp = initialPositions.row(qi).transpose();
           Eigen::Vector3d q = positions.row(qi).transpose();
 
-          for (Eigen::Index fi = 0; fi < F.rows(); fi++) {
+          std::vector<Eigen::Index> triangles;
+          obj.query(q, triangles);
+
+          for (Eigen::Index fi : triangles) {
             Eigen::Vector3d x1 = V.row(F(fi, 0)).transpose();
             Eigen::Vector3d x2 = V.row(F(fi, 1)).transpose();
             Eigen::Vector3d x3 = V.row(F(fi, 2)).transpose();

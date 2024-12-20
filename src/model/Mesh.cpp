@@ -19,6 +19,7 @@ void Mesh::tetrahedralize() {
 
   // Use igl::copyleft::tetgen::tetrahedralize
   std::string flags = "pq2.0Y"; // Quality tetrahedralization, adapt as needed
+
   igl::copyleft::tetgen::tetrahedralize(m_vertices, m_faces, flags, tetVertices,
                                         tets, tetFaces);
 
@@ -26,6 +27,20 @@ void Mesh::tetrahedralize() {
   m_initialVertices = tetVertices;
   m_faces = tetFaces;
   m_tets = tets;
+}
+
+void Mesh::buildBVH(double slack) {
+  m_bvh = new BVH(m_vertices, m_faces, slack);
+}
+
+void Mesh::query(Eigen::Vector3d &q,
+                 std::vector<Eigen::Index> &triangles) const {
+  if (m_bvh != nullptr) {
+    m_bvh->query(q, triangles);
+  } else {
+    triangles.resize(m_faces.rows());
+    std::iota(triangles.begin(), triangles.end(), 0);
+  }
 }
 
 Mesh Mesh::createFloor() {

@@ -128,6 +128,17 @@ void SimulationController::runSimulationThread() {
 
     auto deltaTime = endTime - startTime;
 
+    float newFps =
+        1000000.f /
+        (float)std::chrono::duration_cast<std::chrono::microseconds>(deltaTime)
+            .count();
+    float alpha = 0.05f;
+    if (m_fps == 0) {
+      m_fps = newFps;
+    } else {
+      m_fps = alpha * newFps + (1 - alpha) * m_fps;
+    }
+
     // Sleep enough such that we hit the required FPS
     std::chrono::milliseconds sleepTime =
         std::chrono::milliseconds(simulationSpeed) -

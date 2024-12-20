@@ -6,11 +6,7 @@
 #include "SimulationModel.h"
 #include "../scenes.h"
 #include <Eigen/Core>
-#include <Eigen/Geometry>
-#include <igl/copyleft/tetgen/tetrahedralize.h>
-#include <igl/readOBJ.h>
-#include <igl/readOFF.h>
-#include <igl/upsample.h>
+#include <chrono>
 #include <igl/writeOBJ.h>
 #include <iostream>
 

@@ -35,8 +35,12 @@ add_executable(PBS-soft-body
   src/model/constraints/StaticPlaneCollision.cpp
   src/model/constraints/PlaneFriction.cpp
   src/model/constraints/Volume.cpp
-        src/scenes.h
-        src/model/ConstraintFactory.h
+  src/scenes.h
+  src/model/ConstraintFactory.h
+  src/model/accel/aabb.cpp
+  src/model/accel/aabb.h
+  src/model/accel/bvh.cpp
+  src/model/accel/bvh.h
 )
 
 # link libraries

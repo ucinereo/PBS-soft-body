@@ -8,7 +8,6 @@
 #include "model/Mesh.h"
 #include <Eigen/Core>
 #include <Eigen/Geometry>
-#include <igl/copyleft/tetgen/tetrahedralize.h>
 #include <igl/decimate.h>
 #include <igl/readOBJ.h>
 #include <igl/upsample.h>
@@ -16,6 +15,8 @@
 void createDuckyScene(std::vector<Mesh> &dynamicObjs,
                       std::vector<Mesh> &staticObjs,
                       std::vector<double> &slacks) {
+  bool useBVH = true;
+
   // Create both Ducks
   Eigen::Matrix3d Rx, Ry, Rz;
   Ry = Eigen::AngleAxisd(0, Eigen::Vector3d::UnitY());
@@ -50,17 +51,21 @@ void createDuckyScene(std::vector<Mesh> &dynamicObjs,
   Eigen::Affine3d Mpalme = Tpalme * Eigen::Affine3d::Identity();
   Eigen::MatrixX3d V;
   Eigen::MatrixX3i F;
-  igl::readOBJ("../assets/blaetter.obj", V, F);
+  igl::readOBJ("../assets/blaetter2.obj", V, F);
   Mesh palme(V, F, Mpalme);
   palme.updateColor(0.149, 0.302, 0.047);
+  if (useBVH)
+    palme.buildBVH(1e-1);
   staticObjs.push_back(palme);
   slacks.push_back(1e-1);
 
   Eigen::MatrixX3d V3;
   Eigen::MatrixX3i F3;
-  igl::readOBJ("../assets/stamm.obj", V3, F3);
+  igl::readOBJ("../assets/stamm2.obj", V3, F3);
   Mesh stamm(V3, F3, Mpalme);
   stamm.updateColor(0.302, 0.192, 0.063);
+  if (useBVH)
+    stamm.buildBVH(1e-1);
   staticObjs.push_back(stamm);
   slacks.push_back(1e-1);
 
@@ -69,6 +74,8 @@ void createDuckyScene(std::vector<Mesh> &dynamicObjs,
   igl::readOBJ("../assets/wasser.obj", V2, F2);
   Mesh wasser(V2, F2, Mpalme);
   wasser.updateColor(0.769, 0.588, 0.122);
+  if (useBVH)
+    wasser.buildBVH(1e-1);
   staticObjs.push_back(wasser);
   slacks.push_back(1e-1);
 
@@ -83,6 +90,7 @@ void createDuckyScene(std::vector<Mesh> &dynamicObjs,
 void createDuckyScene2(std::vector<Mesh> &dynamicObjs,
                        std::vector<Mesh> &staticObjs,
                        std::vector<double> &slacks) {
+  bool useBVH = true;
   // Create both Ducks
   Eigen::Matrix3d Rx, Ry, Rz;
   Ry = Eigen::AngleAxisd(0, Eigen::Vector3d::UnitY());
@@ -115,6 +123,9 @@ void createDuckyScene2(std::vector<Mesh> &dynamicObjs,
 
   Mesh cube1 = Mesh::createCube(M3);
   cube1.updateColor(0.8f, 0.4431372f, 0.180392f);
+  cube1.upsample(7);
+  if (useBVH)
+    cube1.buildBVH(1e-1);
   staticObjs.push_back(cube1);
   slacks.push_back(1e-1);
 
@@ -125,6 +136,9 @@ void createDuckyScene2(std::vector<Mesh> &dynamicObjs,
 
   Mesh cube2 = Mesh::createCube(M4);
   cube2.updateColor(0.4431372f, 0.8f, 0.180392f);
+  cube2.upsample(7);
+  if (useBVH)
+    cube2.buildBVH(1e-1);
   staticObjs.push_back(cube2);
   slacks.push_back(1e-1);
 
@@ -135,6 +149,9 @@ void createDuckyScene2(std::vector<Mesh> &dynamicObjs,
 
   Mesh cube3 = Mesh::createCube(M5);
   cube3.updateColor(0.4431372f, 0.180392f, 0.8f);
+  cube3.upsample(7);
+  if (useBVH)
+    cube3.buildBVH(1e-1);
   staticObjs.push_back(cube3);
   slacks.push_back(1e-1);
 

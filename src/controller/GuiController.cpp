@@ -66,6 +66,8 @@ void GuiController::drawMenu(igl::opengl::glfw::Viewer &viewer,
   static bool activeStaticPlane = true;
   static bool activeFriction = true;
 
+  ImGui::Text("FPS: %d", (int)this->controller->getFPS());
+
   if (ImGui::CollapsingHeader("Simulation settings",
                               ImGuiTreeNodeFlags_DefaultOpen)) {
 

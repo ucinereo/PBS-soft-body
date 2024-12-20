@@ -27,6 +27,16 @@ void Renderer::initialize() {
   // Initialize the rendering buffers VAO, VBO, EBO and stuff...
   m_viewer.data().meshgl.init();
 
+  linkShaders();
+
+  // Load custom shaders if needed (you'll need to modify libigl to support
+  // custom shaders)
+  m_viewer.callback_pre_draw = [&](igl::opengl::glfw::Viewer &viewer) {
+    return bgDrawCallback(viewer);
+  };
+}
+
+void Renderer::linkShaders() {
   m_staticShader =
       Shader("../src/view/shaders/floor.vs", "../src/view/shaders/floor.fs");
   m_staticShader.linkShader(m_viewer);
@@ -35,12 +45,6 @@ void Renderer::initialize() {
   m_dynamicShader =
       Shader("../src/view/shaders/mesh.vs", "../src/view/shaders/mesh.fs");
   m_dynamicShader.linkShader(m_viewer);
-
-  // Load custom shaders if needed (you'll need to modify libigl to support
-  // custom shaders)
-  m_viewer.callback_pre_draw = [&](igl::opengl::glfw::Viewer &viewer) {
-    return bgDrawCallback(viewer);
-  };
 }
 
 void Renderer::registerStatics(std::vector<Mesh> &list) {
@@ -142,12 +146,5 @@ void Renderer::clear() {
   }
   m_renderables.clear();
 
-  m_staticShader =
-      Shader("../src/view/shaders/floor.vs", "../src/view/shaders/floor.fs");
-  m_staticShader.linkShader(m_viewer);
-
-  // Load the dynamic shader source and compile it
-  m_dynamicShader =
-      Shader("../src/view/shaders/mesh.vs", "../src/view/shaders/mesh.fs");
-  m_dynamicShader.linkShader(m_viewer);
+  linkShaders();
 }

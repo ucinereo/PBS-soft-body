@@ -86,15 +86,6 @@ private:
     dynamicObjs.push_back(duck2); // Add the object to the dynamics.
 
     // Create Palm Trees
-    Rx = Eigen::AngleAxisd(M_PI / 3, Eigen::Vector3d::UnitX());
-    Ry = Eigen::AngleAxisd(0, Eigen::Vector3d::UnitY());
-    Rz = Eigen::AngleAxisd(M_PI / 3, Eigen::Vector3d::UnitZ());
-
-    auto T3 = Eigen::Translation3d(Eigen::Vector3d(-5, 5, 3));
-    auto R3 = Rz * Rx * Ry;
-    auto S3 = Eigen::Scaling(Eigen::Vector3d(1, 3, 3));
-    Eigen::Affine3d M3 = T3 * R3 * S3;
-
     auto Tpalme = Eigen::Translation3d(Eigen::Vector3d(-5, 0, 0));
     Eigen::Affine3d Mpalme = Tpalme * Eigen::Affine3d::Identity();
     Mesh palme = Mesh::createOBJ("../assets/blaetter2.obj", Mpalme);
@@ -162,7 +153,8 @@ private:
 
     auto T3 = Eigen::Translation3d(Eigen::Vector3d(-5, 5, 3));
     auto R3 = Rz * Rx * Ry;
-    auto S3 = Eigen::Scaling(Eigen::Vector3d(1, 3, 3));
+    auto s3 = Eigen::Vector3d(1, 3, 3);
+    auto S3 = Eigen::Scaling(s3);
     Eigen::Affine3d M3 = T3 * R3 * S3;
 
     Mesh cube1 = Mesh::createOBJ("../assets/cube_1x.obj", M3);
@@ -175,8 +167,7 @@ private:
 
     auto T4 = Eigen::Translation3d(Eigen::Vector3d(2, 10, 0));
     auto R4 = Rz.transpose() * Rx * Ry;
-    auto S4 = Eigen::Scaling(Eigen::Vector3d(1, 3, 3));
-    Eigen::Affine3d M4 = T4 * R4 * S4;
+    Eigen::Affine3d M4 = T4 * R4 * S3;
 
     Mesh cube2 = Mesh::createOBJ("../assets/cube_1x.obj", M4);
     cube2.updateColor(0.4431372f, 0.8f, 0.180392f);
@@ -188,8 +179,7 @@ private:
 
     auto T5 = Eigen::Translation3d(Eigen::Vector3d(-5, 15, 0));
     auto R5 = Rz * Rx.transpose() * Ry;
-    auto S5 = Eigen::Scaling(Eigen::Vector3d(1, 3, 3));
-    Eigen::Affine3d M5 = T5 * R5 * S5;
+    Eigen::Affine3d M5 = T5 * R5 * S3;
 
     Mesh cube3 = Mesh::createOBJ("../assets/cube_1x.obj", M5);
     cube3.updateColor(0.4431372f, 0.180392f, 0.8f);

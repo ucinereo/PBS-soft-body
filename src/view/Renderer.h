@@ -38,6 +38,11 @@ public:
   void initialize();
 
   /**
+   * @brief Link or custom shaders to the viewer
+   */
+  void linkShaders();
+
+  /**
    * @brief Adds the static objects to internal object list and sets their new
    * ids
    * @param list List of static objects

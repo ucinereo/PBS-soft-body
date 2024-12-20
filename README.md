@@ -1,8 +1,9 @@
-# Position-Based Dynamics for Soft Bodies
+# Extended Position Based Dynamics for Soft Body Simulation
 
 ![Project Visualization](assets/demo.gif)
 
-This project was created for the ETH Zurich course **"252-0546-00L Physically-Based Simulation in Computer Graphics"** during the **HS2024** semester. We have implemented **XPBD (Extended Position-Based Dynamics)** using advanced simulation methods and built it on a modern **MVC (Model-View-Controller)** architecture, created from the ground up.
+This project was done as part of the course **"252-0546-00L Physically-Based Simulation in Computer Graphics"** at ETH Zürich
+during the **HS2024** semester. We have implemented **XPBD (Extended Position Based Dynamics)** using advanced simulation methods and built it on a modern **MVC (Model-View-Controller)** architecture, created from the ground up.
 
 ---
 

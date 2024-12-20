@@ -59,17 +59,28 @@ This project is built using **CMake**. To build the project:
    git lfs pull
    ```
 
-4. Create a build directory and configure the project:
+3. Create a build directory and configure the project:
    ```bash
    mkdir build
    cd build
    cmake -DCMAKE_BUILD_TYPE=Release ..
    ```
 
-5. Build the project:
+4. Build the project:
    ```bash
    cmake --build .
    ```
+
+---
+
+## Usage
+
+In the viewer there is a dropdown menu where the user can choose between three scenes: Palm Trees and Cuboids without
+and with BVH acceleration. The Palm Trees scene was shown during the live demo and the Cuboid scenes can be used to see
+the performance gains when using BVH acceleration.
+
+The user can also play around with several simulation parameters, such as constraint compliance values, volume constraint
+pressure and friction coefficients.
 
 ---
 

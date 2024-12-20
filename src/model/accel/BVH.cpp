@@ -86,6 +86,24 @@ BVH::BVH(Eigen::MatrixX3d &vertices, Eigen::MatrixX3i &faces, double slack) {
             << std::endl;
 }
 
+BVH::~BVH() {
+  std::vector<BVHNode *> queue;
+  queue.emplace(queue.begin(), m_root);
+
+  while (!queue.empty()) {
+    BVHNode *node = queue.back();
+    queue.pop_back();
+
+    if (node->hasLeft())
+      queue.emplace(queue.begin(), node->getLeft());
+
+    if (node->hasRight())
+      queue.emplace(queue.begin(), node->getRight());
+
+    delete node;
+  }
+}
+
 void BVH::query(const Eigen::Vector3d &q,
                 std::vector<Eigen::Index> &triangles) const {
   std::vector<BVHNode *> queue;

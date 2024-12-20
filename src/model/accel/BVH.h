@@ -107,6 +107,11 @@ public:
   BVH(Eigen::MatrixX3d &vertices, Eigen::MatrixX3i &faces, double slack);
 
   /**
+   * @brief Destructor of the BVH, deletes all the nodes in the BVH tree
+   */
+  ~BVH();
+
+  /**
    * @brief Collect all the triangles that are possible candidates for a
    * collision with the query point
    * @param q The query point

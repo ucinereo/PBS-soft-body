@@ -27,13 +27,15 @@ public:
 private:
   /**
    * @brief Draws the actual imgui menu and links it to the controller.
-   * @param viewer Libigl viewer (TODO: might not be necessary)
+   * @param viewer Libigl viewer
    * @param menu_width Width of the menu
    */
   void drawMenu(igl::opengl::glfw::Viewer &viewer, float menu_width);
 
-  igl::opengl::glfw::imgui::ImGuiPlugin plugin; ///< plugin to register the menu
-  igl::opengl::glfw::imgui::ImGuiMenu menu; ///< the actual imgui menu component
+  igl::opengl::glfw::imgui::ImGuiPlugin
+      m_plugin; ///< plugin to register the menu
+  igl::opengl::glfw::imgui::ImGuiMenu
+      m_menu; ///< the actual imgui menu component
 
-  SimulationController *controller;
+  SimulationController *m_controller;
 };

@@ -10,10 +10,24 @@
 #include "Mesh.h"
 #include <Eigen/Core>
 
+/**
+ * @class ConstraintFactory
+ * @brief Utility class for constructing different constraints
+ */
 class ConstraintFactory {
 public:
   using Indices = std::vector<std::pair<Eigen::Index, Eigen::Index>>;
 
+  /**
+   * @brief Creates a distance constraint on all the edges of each triangle for
+   * all meshes
+   * @param constraints Will be populated with the new constraints
+   * @param positions The vertex positions
+   * @param meshes A list of the meshes for which to create these constraints
+   * @param indices A list of index starts and lengths for each mesh which
+   * define the locations in the global vertex matrix
+   * @param compliance The constraint compliance value
+   */
   static void meshFaceDistance(std::vector<Constraint *> &constraints,
                                Eigen::MatrixX3d &positions,
                                const std::vector<Mesh> &meshes,
@@ -37,6 +51,16 @@ public:
     }
   }
 
+  /**
+   * @brief Creates a distance constraint on all the edges of each tetrahedron
+   * for all meshes
+   * @param constraints Will be populated with the new constraints
+   * @param positions The vertex positions
+   * @param meshes A list of the meshes for which to create these constraints
+   * @param indices A list of index starts and lengths for each mesh which
+   * define the locations in the global vertex matrix
+   * @param compliance The constraint compliance value
+   */
   static void meshTetDistance(std::vector<Constraint *> &constraints,
                               Eigen::MatrixX3d &positions,
                               const std::vector<Mesh> &meshes,
@@ -72,6 +96,17 @@ public:
     }
   }
 
+  /**
+   * @brief Creates a tet-volume constraint on all the tetrahedrons for all
+   * meshes
+   * @param constraints Will be populated with the new constraints
+   * @param positions The vertex positions
+   * @param meshes A list of the meshes for which to create these constraints
+   * @param indices A list of index starts and lengths for each mesh which
+   * define the locations in the global vertex matrix
+   * @param compliance The constraint compliance value
+   * @param pressure The pressure value of the constraint
+   */
   static void tetVolume(std::vector<Constraint *> &constraints,
                         Eigen::MatrixX3d &positions,
                         const std::vector<Mesh> &meshes, const Indices &indices,
@@ -89,6 +124,25 @@ public:
     }
   }
 
+  /**
+   * @brief Creates a collision and a friction constraint for all
+   * vertex<->triangle interactions that are detected in the scene. This
+   * function handles the collision detection itself.
+   * @param constraints Will be populated with the new constraints
+   * @param initialPositions The initial vertex positions
+   * @param positions The vertex positions
+   * @param staticMeshes A list of the static meshes for which to create these
+   * constraints
+   * @param meshes A list of the dynamic meshes for which to create these
+   * constraints
+   * @param indices A list of index starts and lengths for each mesh which
+   * define the locations in the global vertex matrix
+   * @param collisionCompliance The collision constraint compliance value
+   * @param frictionCompliance The friction constraint compliance value
+   * @param staticMu The static friction coefficient
+   * @param kineticMu The kinetic friction coefficient
+   * @param slacks The collision slack values
+   */
   static void vertexStaticTriangleInteraction(
       std::vector<Constraint *> &constraints,
       const Eigen::MatrixX3d &initialPositions,
@@ -102,14 +156,17 @@ public:
 
       for (size_t j = 0; j < staticMeshes.size(); j++) {
         const Mesh &obj = staticMeshes[j];
-        const Eigen::MatrixX3d V = obj.getVertices();
-        const Eigen::MatrixX3i F = obj.getFaces();
+        const Eigen::MatrixX3d &V = obj.getVertices();
+        const Eigen::MatrixX3i &F = obj.getFaces();
 
         for (Eigen::Index qi = s; qi < s + l; qi++) {
           Eigen::Vector3d qp = initialPositions.row(qi).transpose();
           Eigen::Vector3d q = positions.row(qi).transpose();
 
-          for (Eigen::Index fi = 0; fi < F.rows(); fi++) {
+          std::vector<Eigen::Index> triangles;
+          obj.query(q, triangles);
+
+          for (Eigen::Index fi : triangles) {
             Eigen::Vector3d x1 = V.row(F(fi, 0)).transpose();
             Eigen::Vector3d x2 = V.row(F(fi, 1)).transpose();
             Eigen::Vector3d x3 = V.row(F(fi, 2)).transpose();

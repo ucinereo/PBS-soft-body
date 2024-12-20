@@ -41,7 +41,7 @@ public:
   unsigned int getProgID();
 
 private:
-  unsigned int progId;            ///< OpenGL program id
-  std::string vertexShaderCode;   ///< vertex shader code
-  std::string fragmentShaderCode; ///< fragment shader code
+  unsigned int m_progId;            ///< OpenGL program id
+  std::string m_vertexShaderCode;   ///< vertex shader code
+  std::string m_fragmentShaderCode; ///< fragment shader code
 };

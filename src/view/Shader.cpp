@@ -25,18 +25,18 @@ Shader::Shader(std::string vertexFilePath, std::string fragmentFilePath) {
   vertexBuffer << vertexShaderFile.rdbuf();
   fragmentBuffer << fragmentShaderFile.rdbuf();
 
-  vertexShaderCode = vertexBuffer.str();
-  fragmentShaderCode = fragmentBuffer.str();
+  m_vertexShaderCode = vertexBuffer.str();
+  m_fragmentShaderCode = fragmentBuffer.str();
 }
 
 void Shader::linkShader(igl::opengl::glfw::Viewer &viewer) {
   // load the shader program
   bool compiled = igl::opengl::create_shader_program(
-      vertexShaderCode, fragmentShaderCode, {}, progId);
+      m_vertexShaderCode, m_fragmentShaderCode, {}, m_progId);
 
   if (!compiled) {
     std::cout << "PBS::Shader Linkage failed";
   }
 }
 
-unsigned int Shader::getProgID() { return progId; }
+unsigned int Shader::getProgID() { return m_progId; }

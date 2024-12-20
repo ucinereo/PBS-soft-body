@@ -19,13 +19,27 @@ void Mesh::tetrahedralize() {
 
   // Use igl::copyleft::tetgen::tetrahedralize
   std::string flags = "pq2.0Y"; // Quality tetrahedralization, adapt as needed
+
   igl::copyleft::tetgen::tetrahedralize(m_vertices, m_faces, flags, tetVertices,
-                                        tets, tetFaces);
+                                        m_tets, tetFaces);
 
   m_vertices = tetVertices;
   m_initialVertices = tetVertices;
   m_faces = tetFaces;
-  m_tets = tets;
+}
+
+void Mesh::buildBVH(double slack) {
+  m_bvh = new BVH(m_vertices, m_faces, slack);
+}
+
+void Mesh::query(Eigen::Vector3d &q,
+                 std::vector<Eigen::Index> &triangles) const {
+  if (m_bvh != nullptr) {
+    m_bvh->query(q, triangles);
+  } else {
+    triangles.resize(m_faces.rows());
+    std::iota(triangles.begin(), triangles.end(), 0);
+  }
 }
 
 Mesh Mesh::createFloor() {
@@ -42,23 +56,14 @@ Mesh Mesh::createFloor() {
   F << 0, 1, 2, // First triangle
       0, 3, 1;  // Second triangle
 
-  return Mesh(V, F);
+  return {V, F};
 }
 
-Mesh Mesh::createCube(Eigen::Affine3d &toWorld) {
+Mesh Mesh::createOBJ(const std::string &filename, Eigen::Affine3d &toWorld) {
   Eigen::MatrixX3d V;
   Eigen::MatrixX3i F;
 
-  igl::readOBJ("../assets/cube_1x.obj", V, F);
+  igl::readOBJ(filename, V, F);
 
-  return Mesh(V, F, toWorld);
-}
-
-Mesh Mesh::createDuck(Eigen::Affine3d &toWorld) {
-  Eigen::MatrixX3d V;
-  Eigen::MatrixX3i F;
-
-  igl::readOBJ("../assets/rubber_duck.obj", V, F);
-
-  return Mesh(V, F, toWorld);
+  return {V, F, toWorld};
 }

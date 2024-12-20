@@ -9,6 +9,20 @@
 #include <Eigen/Core>
 #include <Eigen/Geometry>
 
+/**
+ * @brief Detect vertex-triangle intersections
+ * @param qp Previous position of the vertex
+ * @param q Current position of the vertex
+ * @param x1 First vertex of the triangle
+ * @param x2 Second vertex of the triangle
+ * @param x3 Third vertex of the triangle
+ * @param slack threshold up to which to discard the collision, useful for
+ * closed meshes where we want to ignore intersections with triangles on the
+ * backside, set to infinity for objects like the floor where we want the
+ * vertices to stay strictly in the half-space given by the plane
+ * @param penetrationDepth the penetration depth along the normal will be
+ * written back to this variable for later use
+ */
 inline bool vertexIntersectsTriangle(const Eigen::Vector3d &qp,
                                      const Eigen::Vector3d &q,
                                      const Eigen::Vector3d &x1,

@@ -1,6 +1,6 @@
 /**
  * @file PlaneFriction.cpp
- * @brief Definitions of the Static Plane Constraint
+ * @brief Definitions of the Plane Friction Constraint
  */
 
 #include "../Constraint.h"

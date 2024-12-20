@@ -10,60 +10,62 @@
 
 void Renderer::initialize() {
   // Basic configuration for libigl
-  viewer.core().is_animating = true;
-  viewer.data().show_lines = false; // disables wireframes per default
-  viewer.core().background_color << 0.5f, 0.78f, 0.89f,
+  m_viewer.core().is_animating = true;
+  m_viewer.data().show_lines = false; // disables wireframes per default
+  m_viewer.core().background_color << 0.5f, 0.78f, 0.89f,
       1.f; // set background to blue
-  viewer.core().is_directional_light = true;
-  init_light_pos << 10.f, 10.f, 10.f;
-  viewer.core().light_position << init_light_pos;
-  viewer.core().is_shadow_mapping = true;
+  m_viewer.core().is_directional_light = true;
+  m_initLightPos << 10.f, 10.f, 10.f;
+  m_viewer.core().light_position << m_initLightPos;
+  m_viewer.core().is_shadow_mapping = true;
 
-  viewer.core().shadow_height = 10000;
-  viewer.core().shadow_width = 10000;
+  m_viewer.core().shadow_height = 10000;
+  m_viewer.core().shadow_width = 10000;
 
   //  viewer.launch_init(false, "PBS Soft Body", 3840, 2160);
-  viewer.launch_init(false, "PBS Soft Body");
+  m_viewer.launch_init(false, "PBS Soft Body");
   // Initialize the rendering buffers VAO, VBO, EBO and stuff...
-  viewer.data().meshgl.init();
+  m_viewer.data().meshgl.init();
 
-  // @TODO: Don't use relative paths like this. Maybe there is a clean c++
-  // variant? Load the static shader source and compile it
-  staticShader =
-      Shader("../src/view/shaders/floor.vs", "../src/view/shaders/floor.fs");
-  staticShader.linkShader(viewer);
-
-  // Load the dynamic shader source and compile it
-  dynamicShader =
-      Shader("../src/view/shaders/mesh.vs", "../src/view/shaders/mesh.fs");
-  dynamicShader.linkShader(viewer);
+  linkShaders();
 
   // Load custom shaders if needed (you'll need to modify libigl to support
   // custom shaders)
-  viewer.callback_pre_draw = [&](igl::opengl::glfw::Viewer &viewer) {
+  m_viewer.callback_pre_draw = [&](igl::opengl::glfw::Viewer &viewer) {
     return bgDrawCallback(viewer);
   };
+}
+
+void Renderer::linkShaders() {
+  m_staticShader =
+      Shader("../src/view/shaders/floor.vs", "../src/view/shaders/floor.fs");
+  m_staticShader.linkShader(m_viewer);
+
+  // Load the dynamic shader source and compile it
+  m_dynamicShader =
+      Shader("../src/view/shaders/mesh.vs", "../src/view/shaders/mesh.fs");
+  m_dynamicShader.linkShader(m_viewer);
 }
 
 void Renderer::registerStatics(std::vector<Mesh> &list) {
   // This is separated if we want to extend the difference between static and
   // dynamics
   for (Mesh &mesh : list) {
-    renderables.emplace_back(mesh, ShaderType::Static);
+    m_renderables.emplace_back(mesh, ShaderType::Static);
     // Set the ID to the last added element
-    mesh.setID(renderables.size() - 1);
+    mesh.setID(m_renderables.size() - 1);
   }
 }
 
 void Renderer::registerDynamics(std::vector<Mesh> &list) {
   for (Mesh &mesh : list) {
-    renderables.emplace_back(mesh, ShaderType::Dynamic);
+    m_renderables.emplace_back(mesh, ShaderType::Dynamic);
     // Set the ID to the last added element
-    mesh.setID(renderables.size() - 1);
+    mesh.setID(m_renderables.size() - 1);
   }
 
   if (list.size() > 0) {
-    viewer.core().align_camera_center(list[0].getVertices());
+    m_viewer.core().align_camera_center(list[0].getVertices());
   }
 }
 
@@ -76,62 +78,73 @@ void Renderer::setMeshData(std::vector<Mesh> &list) {
 
     // Update renderable, note that both getters return a copy and not a
     // reference.
-    renderables[mesh.getID()].V = mesh.getVertices();
-    renderables[mesh.getID()].F = mesh.getFaces();
+    m_renderables[mesh.getID()].m_vertices = mesh.getVertices();
+    m_renderables[mesh.getID()].m_faces = mesh.getFaces();
   }
 }
 
 void Renderer::registerToLibigl() {
-  for (size_t i = 0; i < renderables.size(); i++) {
-    Renderable &renderable = renderables[i];
-    if (renderable.igl_viewer_id < 0) {
+  for (size_t i = 0; i < m_renderables.size(); i++) {
+    Renderable &renderable = m_renderables[i];
+    if (renderable.m_iglViewerID < 0) {
       // Quick hack to add new mesh to the render list
       // viewer.append_mesh() adds a new mesh to its mesh structure and returns
       // the new id.
-      int new_id = i > 0 ? viewer.append_mesh() : 0;
-      renderable.igl_viewer_id = new_id;
+      int new_id = i > 0 ? m_viewer.append_mesh() : 0;
+      renderable.m_iglViewerID = new_id;
     }
 
-    // @TODo: Add colors of the mesh
-    size_t meshIndex = viewer.mesh_index(renderable.igl_viewer_id);
+    size_t meshIndex = m_viewer.mesh_index(renderable.m_iglViewerID);
     // Set default options for statics and dynamics
     if (renderable.type == ShaderType::Static) {
-      viewer.data_list[meshIndex].show_lines = false;
+      m_viewer.data_list[meshIndex].show_lines = false;
     } else {
-      viewer.data_list[meshIndex].show_lines = true;
+      m_viewer.data_list[meshIndex].show_lines = true;
     }
-    viewer.data_list[meshIndex].set_face_based(false);
-    viewer.data_list[meshIndex].clear();
-    viewer.data_list[meshIndex].set_mesh(renderable.V, renderable.F);
-    viewer.data_list[meshIndex].set_colors(renderable.c);
+    m_viewer.data_list[meshIndex].set_face_based(false);
+    m_viewer.data_list[meshIndex].clear();
+    m_viewer.data_list[meshIndex].set_mesh(renderable.m_vertices,
+                                           renderable.m_faces);
+    m_viewer.data_list[meshIndex].set_colors(renderable.m_color);
   }
 }
 
 void Renderer::render() {
   // Iterate over all renderables and update the libigl matrices.
-  for (size_t i = 0; i < renderables.size(); i++) {
-    Renderable &renderable = renderables[i];
-    size_t meshIndex = viewer.mesh_index(renderable.igl_viewer_id);
-    viewer.data_list[meshIndex].set_mesh(renderable.V, renderable.F);
-    viewer.data_list[meshIndex].compute_normals();
+  for (size_t i = 0; i < m_renderables.size(); i++) {
+    Renderable &renderable = m_renderables[i];
+    size_t meshIndex = m_viewer.mesh_index(renderable.m_iglViewerID);
+    m_viewer.data_list[meshIndex].set_mesh(renderable.m_vertices,
+                                           renderable.m_faces);
+    m_viewer.data_list[meshIndex].compute_normals();
 
     if (renderable.type == ShaderType::Static) {
-      viewer.data_list[meshIndex].meshgl.shader_mesh = staticShader.getProgID();
+      m_viewer.data_list[meshIndex].meshgl.shader_mesh =
+          m_staticShader.getProgID();
     } else if (renderable.type == ShaderType::Dynamic) {
-      viewer.data_list[meshIndex].meshgl.shader_mesh =
-          dynamicShader.getProgID();
+      m_viewer.data_list[meshIndex].meshgl.shader_mesh =
+          m_dynamicShader.getProgID();
     }
   }
 }
 
-std::mutex *Renderer::getLock() { return &renderLock; }
+std::mutex *Renderer::getLock() { return &m_renderLock; }
 
-igl::opengl::glfw::Viewer &Renderer::getViewer() { return viewer; }
+igl::opengl::glfw::Viewer &Renderer::getViewer() { return m_viewer; }
 
 bool Renderer::bgDrawCallback(igl::opengl::glfw::Viewer &viewer) {
-  renderLock.lock();
+  m_renderLock.lock();
   render();
-  renderLock.unlock();
+  m_renderLock.unlock();
   // Currently always return false. Might read into the doc. next
   return false;
+}
+
+void Renderer::clear() {
+  for (Renderable &r : m_renderables) {
+    m_viewer.erase_mesh(m_viewer.mesh_index(r.m_iglViewerID));
+  }
+  m_renderables.clear();
+
+  linkShaders();
 }

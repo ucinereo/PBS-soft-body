@@ -1,6 +1,6 @@
 /**
- * @file Distance.cpp
- * @brief Definitions of the Distance Constraint
+ * @file Volume.cpp
+ * @brief Definitions of the ShellVolume and TetVolume Constraints
  */
 
 #include "../Constraint.h"
@@ -8,17 +8,17 @@
 #include <iostream>
 
 ShellVolumeConstraint::ShellVolumeConstraint(
-    double compliance, Eigen::MatrixX3d &x0, Eigen::MatrixX3i triangles,
+    double compliance, Eigen::MatrixX3d &x0, Eigen::MatrixX3i &triangles,
     Eigen::Index start, Eigen::Index length, double pressure)
     : Constraint(compliance, start, length), m_triangles(triangles),
       m_pressure(pressure) {
-  m_init_volume = calculateVolume(x0);
+  m_initVolume = calculateVolume(x0);
 }
 
 void ShellVolumeConstraint::solve(ConstraintQueryRecord &cRec) const {
   double currentVolume = calculateVolume(cRec.X);
 
-  double C = currentVolume - m_pressure * m_init_volume;
+  double C = currentVolume - m_pressure * m_initVolume;
 
   Eigen::Index n = cRec.Xp.rows();
   Eigen::MatrixX3d dCdx(n, 3);
@@ -61,7 +61,7 @@ TetVolumeConstraint::TetVolumeConstraint(double compliance,
                                          Eigen::Index p0, Eigen::Index p1,
                                          Eigen::Index p2, Eigen::Index p3)
     : Constraint(compliance, {p0, p1, p2, p3}), m_pressure(pressure) {
-  m_init_volume = calculateVolume(x0);
+  m_initVolume = calculateVolume(x0);
 }
 
 double TetVolumeConstraint::calculateVolume(const Eigen::MatrixX3d &x) const {
@@ -77,7 +77,7 @@ double TetVolumeConstraint::calculateVolume(const Eigen::MatrixX3d &x) const {
 void TetVolumeConstraint::solve(ConstraintQueryRecord &cRec) const {
   double currentVolume = calculateVolume(cRec.X);
 
-  double C = currentVolume - m_pressure * m_init_volume;
+  double C = currentVolume - m_pressure * m_initVolume;
 
   Eigen::MatrixX3d dCdx(4, 3);
   dCdx.setZero();

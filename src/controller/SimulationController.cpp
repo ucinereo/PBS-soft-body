@@ -10,65 +10,91 @@
 #include <thread>
 
 SimulationController::SimulationController(int FPS)
-    : model(), renderer(), guiController(this, renderer.getViewer()) {
+    : m_model(), m_renderer(), m_guiController(this, m_renderer.getViewer()) {
 
-  renderer.initialize();
+  m_renderer.initialize();
   // Load the dynamic data from the model and register it at the renderer.
   // The setMeshData function connects the render data matrices with the mesh
   // objs.
-  auto &dynamics = model.getDynamics();
-  renderer.registerDynamics(dynamics);
-  renderer.setMeshData(dynamics);
+  auto &dynamics = m_model.getDynamics();
+  m_renderer.registerDynamics(dynamics);
+  m_renderer.setMeshData(dynamics);
 
   // Load the static data from the model and register it at the renderer.
-  auto &statics = model.getStatics();
-  renderer.registerStatics(statics);
-  renderer.setMeshData(statics);
+  auto &statics = m_model.getStatics();
+  m_renderer.registerStatics(statics);
+  m_renderer.setMeshData(statics);
 
   // Add the registered mesh data to the libigl's viewer.
-  renderer.registerToLibigl();
+  m_renderer.registerToLibigl();
 
   //
-  simulationSpeed = std::round(1000 / FPS);
-  simulationThread =
+  m_simulationSpeed = std::round(1000 / FPS);
+  m_simulationThread =
       new std::thread(&SimulationController::runSimulationThread, this);
-  renderer.getViewer().launch_rendering(true);
+  m_renderer.getViewer().launch_rendering(true);
 }
 
 void SimulationController::singleStep() {
-  this->isSimulationRunning = true;
-  model.getLock()->lock();
-  model.update(timeStep);
+  this->m_isSimulationRunning = true;
+  m_model.getLock()->lock();
+  m_model.update(m_timeStep);
   // Render the scene (lock render thread if necessary)
-  renderer.getLock()->lock();
+  m_renderer.getLock()->lock();
   // It's only necessary to update the dynamic meshes, as statics don't move
-  auto &list = model.getDynamics();
+  auto &list = m_model.getDynamics();
   // This overwrites the libigl's meshes with the new ones.
-  renderer.setMeshData(list);
-  renderer.getLock()->unlock();
-  model.getLock()->unlock();
-  this->isSimulationRunning = false;
+  m_renderer.setMeshData(list);
+  m_renderer.getLock()->unlock();
+  m_model.getLock()->unlock();
+  this->m_isSimulationRunning = false;
+}
+
+void SimulationController::replaceScene(ESceneType sceneType) {
+  this->m_isSimulationRunning = false;
+
+  m_model.getLock()->lock();
+  m_renderer.getLock()->lock();
+
+  m_model.clear();
+  m_renderer.clear();
+  m_model.replaceScene(sceneType);
+
+  auto &dynamics = m_model.getDynamics();
+  m_renderer.registerDynamics(dynamics);
+  m_renderer.setMeshData(dynamics);
+
+  // Load the static data from the model and register it at the renderer.
+  auto &statics = m_model.getStatics();
+  m_renderer.registerStatics(statics);
+  m_renderer.setMeshData(statics);
+
+  // Add the registered mesh data to the libigl's viewer.
+  m_renderer.registerToLibigl();
+
+  m_renderer.getLock()->unlock();
+  m_model.getLock()->unlock();
 }
 
 void SimulationController::resetSimulation() {
 
   auto startTime = std::chrono::high_resolution_clock::now();
 
-  this->isSimulationRunning = false;
+  this->m_isSimulationRunning = false;
 
-  model.getLock()->lock();
+  m_model.getLock()->lock();
   // reset the model to the initial positions
-  model.reset();
+  m_model.reset();
 
   // Render the scene (lock render thread if necessary)
-  renderer.getLock()->lock();
+  m_renderer.getLock()->lock();
   // It's only necessary to update the dynamic meshes, as statics don't move
-  auto &list = model.getDynamics();
+  auto &list = m_model.getDynamics();
   // This overwrites the libigl's meshes with the new ones.
-  renderer.setMeshData(list);
-  renderer.getLock()->unlock();
+  m_renderer.setMeshData(list);
+  m_renderer.getLock()->unlock();
 
-  model.getLock()->unlock();
+  m_model.getLock()->unlock();
 
   auto endTime = std::chrono::high_resolution_clock::now();
 
@@ -76,61 +102,68 @@ void SimulationController::resetSimulation() {
 
   // Sleep enough such that we hit the required FPS
   std::chrono::milliseconds sleepTime =
-      std::chrono::milliseconds(simulationSpeed) -
+      std::chrono::milliseconds(m_simulationSpeed) -
       std::chrono::duration_cast<std::chrono::milliseconds>(deltaTime);
 
   std::this_thread::sleep_for(sleepTime);
 }
 
 void SimulationController::stopSimulation() {
-  this->isSimulationRunning = false;
+  this->m_isSimulationRunning = false;
 }
 
 void SimulationController::startSimulation() {
-  this->isSimulationRunning = true;
-  simulationThread =
+  this->m_isSimulationRunning = true;
+  m_simulationThread =
       new std::thread(&SimulationController::runSimulationThread, this);
 }
 
 void SimulationController::exportObj() {
-  this->isSimulationRunning = false;
-  model.exportMesh();
+  this->m_isSimulationRunning = false;
+  m_model.exportMesh();
 }
 
 bool SimulationController::getIsSimulationRunning() {
-  return this->isSimulationRunning;
-}
-
-void SimulationController::setState(bool state, EConstraintType type) {
-  model.setActive(type, state);
+  return this->m_isSimulationRunning;
 }
 
 void SimulationController::runSimulationThread() {
-  while (isSimulationRunning) {
+  while (m_isSimulationRunning) {
     auto startTime = std::chrono::high_resolution_clock::now();
 
     // Update the physical simulation model (i.e. do one XPBD step)
     // model.update(simulationSpeed);
-    model.getLock()->lock();
-    model.update(timeStep);
+    m_model.getLock()->lock();
+    m_model.update(m_timeStep);
 
     // Render the scene (lock render thread if necessary)
-    renderer.getLock()->lock();
+    m_renderer.getLock()->lock();
     // It's only necessary to update the dynamic meshes, as statics don't move
-    auto &list = model.getDynamics();
+    auto &list = m_model.getDynamics();
     // This overwrites the libigl's meshes with the new ones.
-    renderer.setMeshData(list);
-    renderer.getLock()->unlock();
+    m_renderer.setMeshData(list);
+    m_renderer.getLock()->unlock();
 
-    model.getLock()->unlock();
+    m_model.getLock()->unlock();
 
     auto endTime = std::chrono::high_resolution_clock::now();
 
     auto deltaTime = endTime - startTime;
 
+    float newFps =
+        1000000.f /
+        (float)std::chrono::duration_cast<std::chrono::microseconds>(deltaTime)
+            .count();
+    float alpha = 0.05f;
+    if (m_fps == 0) {
+      m_fps = newFps;
+    } else {
+      m_fps = alpha * newFps + (1 - alpha) * m_fps;
+    }
+
     // Sleep enough such that we hit the required FPS
     std::chrono::milliseconds sleepTime =
-        std::chrono::milliseconds(simulationSpeed) -
+        std::chrono::milliseconds(m_simulationSpeed) -
         std::chrono::duration_cast<std::chrono::milliseconds>(deltaTime);
 
     std::this_thread::sleep_for(sleepTime);

@@ -4,6 +4,7 @@
  */
 #pragma once
 
+#include "./accel/BVH.h"
 #include <Eigen/Core>
 #include <Eigen/Geometry>
 #include <igl/readOBJ.h>
@@ -25,6 +26,7 @@ public:
    */
   Mesh(Eigen::MatrixX3d &vertices, Eigen::MatrixX3i &faces)
       : m_vertices(vertices), m_initialVertices(vertices), m_faces(faces) {}
+
   /**
    * @brief Create a new mesh.
    * @param vertices Vertices matrix of shape (N x 3)
@@ -46,13 +48,13 @@ public:
   Eigen::Index numVertices() const { return m_vertices.rows(); };
 
   /**
-   * @brief Get a copy of the vertex matrix.
+   * @brief Get the current vertex positions.
    * @return const Eigen::MatrixXd non-modifiable vertex matrix
    */
   const Eigen::MatrixX3d &getVertices() const { return m_vertices; };
 
   /**
-   * @brief Get a copy of the vertex matrix.
+   * @brief Get the initial vertex positions
    * @return const Eigen::MatrixXd non-modifiable vertex matrix
    */
   const Eigen::MatrixX3d &getInitialVertices() const {
@@ -60,30 +62,33 @@ public:
   };
 
   /**
-   * @brief Get a copy of the face matrix.
-   * @return const Eigen::MatrixXi non-modifiable face matrix
+   * @brief Get the the face matrix which index into the vertex matrix.
+   * @return const Eigen::MatrixX3i non-modifiable face matrix
    */
   const Eigen::MatrixX3i &getFaces() const { return m_faces; };
 
   /**
-   * @brief Get the tetrahedra indices (matrix of shape (n x 4))
-   * @return Tet index matrix
+   * @brief Get the tetrahedron matrix which index into the vertex matrix.
+   * @return const Eigen::MatrixX4i non-modifiable tet matrix
    */
   const Eigen::MatrixX4i &getTets() const { return m_tets; };
 
   /**
    * @brief Get the number of faces.
-   * @return const Eigen::Index number of faces
+   * @return Eigen::Index number of faces
    */
   Eigen::Index numFaces() const { return m_faces.rows(); };
 
   /**
    * @brief Update the vertex positions of the vertices
    * @param vertices New vertex matrix of shape (N, 3), note that this function
-   * does not check wether the new vertex positions are valid.
+   * does not check whether the new vertex positions are valid.
    */
   void updateVertices(Eigen::MatrixX3d &vertices) { m_vertices = vertices; };
 
+  /**
+   * @brief Reset the vertex positions to their initial state
+   */
   void resetVertices() { m_vertices = m_initialVertices; };
 
   /**
@@ -100,9 +105,27 @@ public:
    */
   void updateColor(double r, double g, double b) { m_color << r, g, b; };
 
+  /**
+   * @brief Upsample the mesh via subdivision
+   * @param nSubdivs number of subdivisions
+   */
   void upsample(int nSubdivs);
 
+  /**
+   * @brief Tetrahedralize the mesh
+   */
   void tetrahedralize();
+
+  /**
+   * @brief Build a BVH for the mesh triangles to speed up intersection tests.
+   * Only works for static objects.
+   */
+  void buildBVH(double slack);
+
+  /**
+   * @brief Get the triangles which are candidates for possible intersections
+   */
+  void query(Eigen::Vector3d &q, std::vector<Eigen::Index> &triangles) const;
 
   /**
    * @brief Get the internal ID of the mesh (renderer ID, not libigl)
@@ -123,21 +146,26 @@ public:
    */
   static Mesh createFloor();
 
-  static Mesh createCube(Eigen::Affine3d &toWorld);
-
-  static Mesh createDuck(Eigen::Affine3d &toWorld);
+  /**
+   * @brief Create a mesh from an .obj file, together with an object->world
+   * transformation matrix
+   * @param filename Path to the .obj file
+   * @param toWorld object->world transformation matrix
+   */
+  static Mesh createOBJ(const std::string &filename, Eigen::Affine3d &toWorld);
 
 private:
-  // @TODO: Currently stores the vertex positions directly, might be smart to
-  // add an origin position just like in the PBS example projects.
-  Eigen::MatrixX3d m_vertices;
-  Eigen::MatrixX3d m_initialVertices;
-  Eigen::MatrixX3i m_faces;
-  Eigen::MatrixX4i m_tets;
+  Eigen::MatrixX3d m_vertices;        /// Stores the vertex positions
+  Eigen::MatrixX3d m_initialVertices; /// Stores the initial vertex positions
+  Eigen::MatrixX3i m_faces;           /// Stores the face indices
+  Eigen::MatrixX4i m_tets;            /// Stores the tet indices
 
-  Eigen::Affine3d m_toWorld = Eigen::Affine3d::Identity();
+  BVH *m_bvh = nullptr; /// Stores the BVH if one gets built
 
-  // @TODO: Update single color vector with color matrix (see libigl)
+  Eigen::Affine3d m_toWorld =
+      Eigen::Affine3d::Identity(); /// Stores the object->world transformation
+                                   /// matrix
+
   Eigen::RowVector3d m_color =
       Eigen::RowVector3d(0.2f, 0.2f, 0.2f); ///< Mesh color
 

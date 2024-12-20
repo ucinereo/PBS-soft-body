@@ -14,6 +14,7 @@ void StaticPlaneCollisionConstraint::solve(ConstraintQueryRecord &cRec) const {
   Eigen::MatrixX3d dCdx(1, 3);
   dCdx << m_normal.transpose();
 
+  // Unilateral constraint, don't do anything if we are currently not colliding
   if (C > 0) {
     C *= 0;
     dCdx *= 0;

@@ -28,7 +28,7 @@ public:
   /**
    * @brief Construct a new Renderer object.
    */
-  Renderer(){};
+  Renderer() {};
 
   /**
    * @brief Initializes the libigl viewer and links the custom shaders for
@@ -73,6 +73,11 @@ public:
   std::mutex *getLock();
 
   /**
+   * @brief Clear the renderer state to prepare it for a new scene
+   */
+  void clear();
+
+  /**
    * @brief Get the libigl Viewer object
    * @return igl::opengl::glfw::Viewer& reference to viewer
    */
@@ -92,19 +97,19 @@ private:
    * @brief Libigl drawback function which actually calls the render function,
    * but mutually exclusive, such that we don't have a read/write conflict.
    * @param viewer Libigl viewer
-   * @return Currently always returns false :) @TODO: Maybe update this??
+   * @return Currently always returns false :)
    */
   bool bgDrawCallback(igl::opengl::glfw::Viewer &viewer);
 
-  std::mutex renderLock; ///< Lock which is necessary to avoid race conditions
-  igl::opengl::glfw::Viewer viewer; ///< Libigl viewer
-  igl::opengl::glfw::imgui::ImGuiPlugin plugin;
-  igl::opengl::glfw::imgui::ImGuiMenu menu;
+  std::mutex m_renderLock; ///< Lock which is necessary to avoid race conditions
+  igl::opengl::glfw::Viewer m_viewer; ///< Libigl viewer
+  igl::opengl::glfw::imgui::ImGuiPlugin m_plugin;
+  igl::opengl::glfw::imgui::ImGuiMenu m_menu;
 
-  Shader staticShader;  ///< Shader for static objects
-  Shader dynamicShader; ///< Shader for dynamic objects
-  Eigen::Vector3f init_light_pos;
+  Shader m_staticShader;  ///< Shader for static objects
+  Shader m_dynamicShader; ///< Shader for dynamic objects
+  Eigen::Vector3f m_initLightPos;
 
   std::vector<Renderable>
-      renderables; ///< List which stores all renderable meshes
+      m_renderables; ///< List which stores all renderable meshes
 };

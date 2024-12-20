@@ -4,6 +4,7 @@
  * physical simulation itself. It also provides an interface to access the data.
  */
 #pragma once
+#include "../scenes.h"
 #include "../view/RendereableMesh.h"
 #include "Constraint.h"
 #include "ConstraintFactory.h"
@@ -31,6 +32,22 @@ public:
    * calls initialize() to initialize the scene.
    */
   SimulationModel();
+
+  /**
+   * @brief Clear the simulation state buffers
+   */
+  void clear();
+
+  /**
+   * @brief Replace the current scene
+   * @param sceneType Type of the new scene
+   */
+  void replaceScene(ESceneType sceneType);
+
+  /**
+   * @brief Get the current scene type
+   */
+  ESceneType getSceneType() const { return m_sceneType; }
 
   /**
    * @brief get the compliance value of some constraint type
@@ -76,10 +93,26 @@ public:
     }
   }
 
+  /**
+   * @brief Get the static friction coefficient
+   */
   double getStaticMu() { return m_staticMu; }
+
+  /**
+   * @brief Get the kinetic friction coefficient
+   */
   double getKineticMu() { return m_kineticMu; }
 
+  /**
+   * @brief Set the static friction coefficient
+   * @param staticMu new value of the static friction coefficient
+   */
   void setStaticMu(double staticMu) { m_staticMu = staticMu; }
+
+  /**
+   * @brief Set the kinetic friction coefficient
+   * @param kineticMu new value of the kinetic friction coefficient
+   */
   void setKineticMu(double kineticMu) { m_kineticMu = kineticMu; }
 
   /**
@@ -132,24 +165,28 @@ private:
    */
   void initialize();
 
+  /**
+   * @brief Detect collisions between dynamic and static objects in the current
+   * scene
+   * @param Xp The previous vertex position matrix
+   * @param X The current vertex position matrix
+   * @param collConstraints Will be populated with the respective collision
+   * constraints
+   * */
   void
   getStaticCollConstraints(const Eigen::MatrixX3d &Xp,
                            const Eigen::MatrixX3d &X,
                            std::vector<Constraint *> &collConstraints) const;
 
-  //  void
-  //  getDynamicCollConstraints(const Eigen::MatrixX3d &Xp,
-  //                            const Eigen::MatrixX3d &X,
-  //                            std::vector<Constraint *> &collConstraints)
-  //                            const;
-
   std::mutex m_modelLock; ///< Lock which is necessary to avoid race condition
 
   std::vector<Mesh> m_staticObjs;  ///< Storage of static scene objects
   std::vector<Mesh> m_dynamicObjs; ///< Storage of dynamic scene objects
-  std::vector<double> m_slacks;
-  double m_staticMu = 0.000001;
-  double m_kineticMu = 0.00001;
+  std::vector<double> m_slacks;    ///< Storge of the collision slacks
+  double m_staticMu = 0.000001; ///< the static friction coefficient between the
+                                ///< objects in the scene
+  double m_kineticMu = 0.00001; ///< the kinetic friction coefficient between
+                                ///< the objects in the scene
 
   /// Simulation State
   std::vector<std::pair<Eigen::Index, Eigen::Index>>
@@ -163,11 +200,14 @@ private:
   /// External Forces (just gravity for now)
   Eigen::MatrixX3d m_gravity; /// (N x 3)
   const double m_gravityAccel =
-      -0.00001; // @TODO: change scene scale such that we can put -9.81 here
+      -0.00001; ///< Acceleration of the gravitational pull
 
   /// Solver Arguments
   const int m_solverIterations = 20; /// Max number of iterations
   const double m_solverResidual =
       1e-9; /// Max residual (sum of position delta norms)
   double m_time = 0;
+
+  ESceneType m_sceneType = EPalmTree; ///< Store the current scene type,
+                                      ///< initially this is the palm tree scene
 };

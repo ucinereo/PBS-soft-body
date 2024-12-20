@@ -1,13 +1,19 @@
 /**
  * @file Constraint.h
  * @brief Defines the abstract Constraint class which is a generic description
- * of a constraint used for XPBD.
+ * of a constraint used for XPBD. Moreover, it declares the constraints that
+ * were implemented.
  */
 #pragma once
 
 #include <Eigen/Core>
 #include <numeric>
 
+/**
+ * @enum EConstraintType
+ * @brief Utility for identifying constraints when searching for them in the
+ * constraint pool of the simulation model
+ */
 enum EConstraintType {
   EDistance,
   EStaticPlaneCollision,
@@ -17,7 +23,10 @@ enum EConstraintType {
 };
 
 /// Update strategies for the solver, defines what values should be used in the
-/// update step
+/// update step. Either directly computes deltas on the position or compute
+/// constraint values and gradients with respect to the positions. The former is
+/// currently unused but still kept in case it might be useful in the future for
+/// some other constraints.
 enum EUpdateStrategy {
   EDelta,
   EValGrad,
@@ -35,6 +44,8 @@ struct ConstraintQueryRecord {
   /// Current position candidates
   const Eigen::MatrixX3d &X;
 
+  // Optionally extend this query record to support other constraint types that
+  // might rely on other state variables of the simulation
   //  /// Vertex masses
   //  const Eigen::VectorXd &m;
   //
@@ -110,20 +121,20 @@ protected:
   std::vector<Eigen::Index> m_indices; /// Indices of the relevant vertices
   double
       m_compliance; /// Constraint compliance, corresponds to inverse stiffness
-  bool isActive = true; /// Status of the constraint: is it enabled or not
+  bool m_isActive = true; /// Status of the constraint: is it enabled or not
 
 public:
   /**
    * @brief Evaluate the constraint and its gradient with respect to the
-   * relevant vertices
+   * relevant vertices, or compute the position deltas directly.
    * @param cRec A Constraint Query Record
-   * @return The constraint value C and the gradient dC/dx will be written to
-   * the Constraint Query Record
+   * @return The constraint value C and the gradient dC/dx or the deltaX will be
+   * written to the Constraint Query Record
    */
   virtual void solve(ConstraintQueryRecord &cRec) const = 0;
 
   /**
-   * @brief Get the indices of the relevant vertices
+   * @brief Get the indices of the relevant vertices for this constraint
    * @return A list of indices
    */
   std::vector<Eigen::Index> getIndices() const { return m_indices; }
@@ -136,19 +147,22 @@ public:
 
   /**
    * @brief Set the compliance value
+   * @param compliance The new compliance value
    */
   void setCompliance(double compliance) { m_compliance = compliance; }
 
   /**
    * @brief get the current is_active status
-   * @return is_active value
+   * @return Whether this constraint is currently active or not
    */
-  bool getIsActive() const { return isActive; }
+  bool getIsActive() const { return m_isActive; }
 
   /**
-   * @brief Set the isActive status
+   * @brief Set the constraint status
+   * @param active If true, the constraint will be activated, otherwise
+   * deactivated
    */
-  void setIsActive(bool active) { isActive = active; }
+  void setIsActive(bool active) { m_isActive = active; }
 
   /**
    * @brief Get the constraint alpha
@@ -160,6 +174,7 @@ public:
 
   /**
    * @brief Get the constraint type
+   * @returns The constraint type
    */
   virtual EConstraintType getType() const = 0;
 };
@@ -188,6 +203,10 @@ public:
    */
   void solve(ConstraintQueryRecord &cRec) const override;
 
+  /**
+   * @brief Get the constraint type
+   * @returns EDistance
+   */
   EConstraintType getType() const override { return EDistance; }
 
 private:
@@ -225,6 +244,7 @@ public:
 
   /**
    * @brief Get the constraint type
+   * @returns EStaticPlaneCollision
    */
   EConstraintType getType() const override { return EStaticPlaneCollision; }
 
@@ -263,6 +283,10 @@ public:
    */
   void solve(ConstraintQueryRecord &cRec) const override;
 
+  /**
+   * @brief Get the constraint type
+   * @returns EPlaneFriction
+   */
   EConstraintType getType() const override { return EPlaneFriction; }
 
 private:
@@ -284,11 +308,13 @@ public:
    * means a perfectly stiff constraint and corresponds to the behavior in the
    * regular PBD algorithm
    * @param x0 Matrix of initial positions
+   * @param triangles Triangle index matrix
    * @param start Index of first vertex in simulation domain of the volume
    * @param length Number of vertices for this volume
+   * @param pressure The constraint pressure value
    */
   ShellVolumeConstraint(double compliance, Eigen::MatrixX3d &x0,
-                        Eigen::MatrixX3i triangles, Eigen::Index start,
+                        Eigen::MatrixX3i &triangles, Eigen::Index start,
                         Eigen::Index length, double pressure);
 
   /**
@@ -304,6 +330,10 @@ public:
    */
   double calculateVolume(const Eigen::MatrixX3d &x) const;
 
+  /**
+   * @brief Get the constraint type
+   * @returns EShellVolume
+   */
   EConstraintType getType() const override { return EShellVolume; }
 
   /**
@@ -314,14 +344,14 @@ public:
 
   /**
    * @brief update the pressure value
-   * @param pressure the new vlaue the pressure gets updated to
+   * @param pressure the new value the pressure gets updated to
    */
   void setPressure(double pressure) { m_pressure = pressure; }
 
 private:
   Eigen::MatrixX3i m_triangles; /// Vertex indices of the triangles
-  double m_init_volume; /// Initial volume, the constraint will try to match
-  double m_pressure;    /// Pressure factor in front of the initial volume
+  double m_initVolume; /// Initial volume, the constraint will try to match
+  double m_pressure;   /// Pressure factor in front of the initial volume
 };
 
 /**
@@ -335,18 +365,22 @@ public:
                       Eigen::Index p3);
 
   /**
-   * @brief Evaluate the volume constraint. The value is computed as @TODO
+   * @brief Evaluate the volume constraint.
    * @param cRec A Constraint Query Record
    */
   void solve(ConstraintQueryRecord &cRec) const override;
 
   /**
-   * @brief Calcualte the volume of a tet
+   * @brief Calculate the volume of a tet
    * @param x Vertex positions
    * @return double, the volume of the mesh
    */
   double calculateVolume(const Eigen::MatrixX3d &x) const;
 
+  /**
+   * @brief Get the constraint type
+   * @returns ETetVolume
+   */
   EConstraintType getType() const override { return ETetVolume; }
 
   /**
@@ -357,11 +391,11 @@ public:
 
   /**
    * @brief update the pressure value
-   * @param pressure the new vlaue the pressure gets updated to
+   * @param pressure the new value the pressure gets updated to
    */
   void setPressure(double pressure) { m_pressure = pressure; }
 
 private:
-  double m_init_volume;    ///< Initial volume of each tet
+  double m_initVolume;     ///< Initial volume of each tet
   double m_pressure = 1.f; ///< pressure of the tets
 };

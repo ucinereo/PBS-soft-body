@@ -27,11 +27,11 @@ enum class ShaderType {
  */
 struct Renderable {
   const ShaderType type;
-  Eigen::MatrixXd V;    ///< Vertex matrix of shape (N x 3)
-  Eigen::MatrixXi F;    ///< Face matrix of shape (N x 3)
-  Eigen::RowVector3d c; ///< Color vector
+  Eigen::MatrixXd m_vertices; ///< Vertex matrix of shape (N x 3)
+  Eigen::MatrixXi m_faces;    ///< Face matrix of shape (N x 3)
+  Eigen::RowVector3d m_color; ///< Color vector
 
-  int igl_viewer_id; ///< Mesh id of libigl, to access the element in libigl
+  int m_iglViewerID; ///< Mesh id of libigl, to access the element in libigl
 
   /**
    * @brief Construct a new Renderable object
@@ -40,9 +40,9 @@ struct Renderable {
    * it
    */
   Renderable(Mesh &mesh, const ShaderType type) : type(type) {
-    V = mesh.getVertices();
-    F = mesh.getFaces();
-    c = mesh.getColor();
-    igl_viewer_id = -1;
+    m_vertices = mesh.getVertices();
+    m_faces = mesh.getFaces();
+    m_color = mesh.getColor();
+    m_iglViewerID = -1;
   };
 };

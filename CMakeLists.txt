@@ -37,10 +37,9 @@ add_executable(PBS-soft-body
   src/model/constraints/Volume.cpp
   src/scenes.h
   src/model/ConstraintFactory.h
-  src/model/accel/aabb.cpp
-  src/model/accel/aabb.h
-  src/model/accel/bvh.cpp
-  src/model/accel/bvh.h
+  src/model/accel/AABB.h
+  src/model/accel/BVH.cpp
+  src/model/accel/BVH.h
 )
 
 # link libraries

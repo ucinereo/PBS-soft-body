@@ -1,8 +1,9 @@
-//
-// Created by Gent Serifi on 18.12.2024.
-//
+/**
+ * @file BVH.cpp
+ * @brief Simple implementation of the Bounding Volume Hierarchy (BVH)
+ */
 
-#include "bvh.h"
+#include "BVH.h"
 #include <iostream>
 #include <numeric>
 
@@ -50,6 +51,7 @@ BVH::BVH(Eigen::MatrixX3d &vertices, Eigen::MatrixX3i &faces, double slack) {
       }
     }
 
+    // Heuristic to tune depth of the tree vs. width of the leafs
     if (depth >= length)
       continue;
 

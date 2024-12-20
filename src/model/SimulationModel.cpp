@@ -4,20 +4,27 @@
  */
 
 #include "SimulationModel.h"
-#include "../scenes.h"
 #include <Eigen/Core>
 #include <chrono>
 #include <igl/writeOBJ.h>
 #include <iostream>
 
-SimulationModel::SimulationModel() { initialize(); }
+SimulationModel::SimulationModel() { replaceScene(m_sceneType); }
+
+void SimulationModel::clear() {
+  m_dynamicObjs.clear();
+  m_staticObjs.clear();
+  m_indices.clear();
+  m_constraints.clear();
+}
+
+void SimulationModel::replaceScene(ESceneType sceneType) {
+  m_sceneType = sceneType;
+  SceneFactory::createScene(sceneType, m_dynamicObjs, m_staticObjs, m_slacks);
+  initialize();
+}
 
 void SimulationModel::initialize() {
-  // @TODO: Update this initialization with a scene parsing or something
-
-  createDuckyScene(m_dynamicObjs, m_staticObjs, m_slacks);
-  //  createDuckyScene2(m_dynamicObjs, m_staticObjs, m_slacks);
-
   // Compute indices in the per vertex state matrices for each object
   Eigen::Index totalNumVertices = 0;
   for (Mesh &mesh : m_dynamicObjs) {
@@ -153,19 +160,6 @@ void SimulationModel::update(double deltaTime) {
 
   // Get external forces
   Eigen::MatrixX3d f_ext = m_gravity;
-
-  // @TODO: Remove this, only used for testing
-  // Reverse Direction of external force every 3 seconds for 0.5s
-  //  m_time += deltaTime;
-  //  if (m_time >= 10000 && m_time < 10250) {
-  //    f_ext *= -2;
-  //    //    f_ext += Eigen::MatrixX3d::Random(f_ext.rows(), f_ext.cols()) *
-  //    0.005;
-  //    //    f_ext(Eigen::all, 0) += Eigen::RowVectorXd::Ones(f_ext.rows()) *
-  //    //    0.000035;
-  //  } else if (m_time >= 10250) {
-  //    m_time = 0;
-  //  }
 
   // Predict positions
   Eigen::MatrixX3d x = m_positions;

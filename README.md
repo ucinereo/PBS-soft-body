@@ -78,7 +78,9 @@ This project is built using **CMake**. To build the project:
 
 In the viewer there is a dropdown menu where the user can choose between three scenes: Palm Trees and Cuboids without
 and with BVH acceleration. The Palm Trees scene was shown during the live demo and the Cuboid scenes can be used to see
-the performance gains when using BVH acceleration.
+the performance gains when using BVH acceleration. Note that the Cuboid scene without BVH might be running either extremely
+slow or not at all, that's because the cuboids were heavily subdivided, resulting in 150k static triangles. Thus, this
+scene serves as a stress test for our implementation.
 
 The user can also play around with several simulation parameters, such as constraint compliance values, volume constraint
 pressure and friction coefficients.
